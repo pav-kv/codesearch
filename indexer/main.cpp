@@ -1,4 +1,8 @@
+#include "lister.h"
+
 #include <iostream>
+
+using namespace NCodesearch;
 
 int main(int argc, char** argv) {
     if (argc < 2) {
@@ -6,7 +10,9 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    std::cout << "Hello. This is the indexer program.\n";
+    TListerConfig cfg;
+    TLister lister(cfg);
+    lister.List(string(argv[1]));
 
     return 0;
 }
