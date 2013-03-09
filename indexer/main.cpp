@@ -1,4 +1,6 @@
+#include "fileindex.h"
 #include "lister.h"
+#include "queue.h"
 
 #include <iostream>
 
@@ -11,7 +13,9 @@ int main(int argc, char** argv) {
     }
 
     TListerConfig cfg;
-    TLister lister(cfg);
+    TFileIndex fileIndex("index");
+    TFileQueue queue(20);
+    TLister lister(cfg, fileIndex, queue);
     lister.List(string(argv[1]));
 
     return 0;

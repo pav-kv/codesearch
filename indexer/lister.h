@@ -7,6 +7,9 @@ using std::string;
 
 namespace NCodesearch {
 
+class TFileIndex;
+class TFileQueue;
+
 class TListerConfig : public TConfigBase {
 public:
     bool Recursive;
@@ -24,7 +27,7 @@ public:
 
 class TLister {
 public:
-    explicit TLister(const TListerConfig& config);
+    explicit TLister(const TListerConfig& config, TFileIndex& fileIndex, TFileQueue& fileQueue);
     void List(const string& root) const;
 
 private:
@@ -32,6 +35,8 @@ private:
 
 private:
     TListerConfig Config;
+    TFileIndex& FileIndex;
+    TFileQueue& FileQueue;
 };
 
 } // NCodesearch

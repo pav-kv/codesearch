@@ -1,4 +1,6 @@
+#include "fileindex.h"
 #include "lister.h"
+#include "queue.h"
 
 #include <dirent.h>
 #include <stdio.h>
@@ -10,8 +12,10 @@ namespace NCodesearch {
 ////////////////////////////////////////////////////////////////
 // TLister
 
-TLister::TLister(const TListerConfig& config)
+TLister::TLister(const TListerConfig& config, TFileIndex& fileIndex, TFileQueue& fileQueue)
     : Config(config)
+    , FileIndex(fileIndex)
+    , FileQueue(fileQueue)
 {
     config.Print(std::cerr);
     std::cerr << "---------------------------------\n";
@@ -46,7 +50,8 @@ void TLister::List(const char* root, unsigned int depth) const {
             if (Config.Recursive && depth < Config.MaxDepth)
                 List(fullName, depth + 1);
         } else {
-            printf("%s\n", fullName);
+            FileIndex.Insert(fullName);
+            FileQueue.Enqueue(fullName);
         }
     } while (entry = readdir(dir));
     closedir(dir);

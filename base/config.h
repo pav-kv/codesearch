@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+using std::ostream;
 
 namespace NCodesearch {
 
@@ -10,7 +11,7 @@ public:
     }
 
     virtual void SetDefault() = 0;
-    virtual void Print(std::ostream& output) const = 0;
+    virtual void Print(ostream& output) const = 0;
 };
 
 } // NCodesearch
