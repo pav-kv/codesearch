@@ -23,6 +23,7 @@ TLister::TLister(const TListerConfig& config, TFileIndex& fileIndex, TFileQueue&
 
 void TLister::List(const string& root) const {
     List(root.c_str());
+    FileQueue.Finish();
 }
 
 void TLister::List(const char* root, unsigned int depth) const {

@@ -1,41 +1,45 @@
 #include "queue.h"
 
 #include <iostream>
+
 using std::cerr;
+using std::unique_lock;
 
 namespace NCodesearch {
 
 TFileQueue::TFileQueue(size_t size, size_t threshold)
-    : Lock(PTHREAD_MUTEX_INITIALIZER)
-    , NotEmptyCond(PTHREAD_COND_INITIALIZER)
-    , NotFullCond(PTHREAD_COND_INITIALIZER)
-    , Size(size)
+    : Size(size)
     , EnqueueThreshold(threshold)
 {
 }
 
 void TFileQueue::Enqueue(const char* filename) {
-    pthread_mutex_lock(&Lock);
+    unique_lock<mutex> lock(Lock);
     while (Queue.size() == Size)
-        pthread_cond_wait(&NotFullCond, &Lock);
+        NotFullCond.wait(lock);
     bool wasEmpty = Queue.empty();
     Queue.push_back(filename);
-    pthread_mutex_unlock(&Lock);
     if (wasEmpty)
-        pthread_cond_signal(&NotEmptyCond);
+        NotEmptyCond.notify_all();
 }
 
-string TFileQueue::Dequeue() {
-    pthread_mutex_lock(&Lock);
+bool TFileQueue::Dequeue(string& to) {
+    unique_lock<mutex> lock(Lock);
+    if (Finished && Queue.empty())
+        return false;
     while (Queue.empty())
-        pthread_cond_wait(&NotEmptyCond, &Lock);
+        NotEmptyCond.wait(lock);
     bool wasFull = Queue.size() == Size;
-    string result = Queue.front();
+    to = Queue.front();
     Queue.pop_front();
-    pthread_mutex_unlock(&Lock);
     if (wasFull)
-        pthread_cond_signal(&NotFullCond);
-    return result;
+        NotFullCond.notify_all();
+    return true;
+}
+
+void TFileQueue::Finish() {
+    unique_lock<mutex> lock(Lock);
+    Finished = true;
 }
 
 } // NCodesearch

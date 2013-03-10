@@ -1,10 +1,13 @@
 #pragma once
 
-#include <pthread.h>
+#include <condition_variable>
 #include <deque>
+#include <mutex>
 #include <string>
 
+using std::condition_variable;
 using std::deque;
+using std::mutex;
 using std::string;
 
 namespace NCodesearch {
@@ -14,16 +17,20 @@ public:
     TFileQueue(size_t size, size_t threshold = 1);
 
     void Enqueue(const char* filename);
-    string Dequeue();
+    bool Dequeue(string& to);
+
+    void Finish();
 
 private:
-    pthread_mutex_t Lock;
-    pthread_cond_t NotEmptyCond;
-    pthread_cond_t NotFullCond;
+    mutex Lock;
+    condition_variable NotEmptyCond;
+    condition_variable NotFullCond;
 
     size_t Size;
     deque<string> Queue;
     size_t EnqueueThreshold;
+
+    bool Finished;
 };
 
 } // NCodesearch
