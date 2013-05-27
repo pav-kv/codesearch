@@ -1,8 +1,8 @@
-#include "fileindex.h"
+#include "indexer.h"
 #include "lister.h"
-#include "queue.h"
 
 #include <iostream>
+using std::cout;
 
 using namespace NCodesearch;
 
@@ -12,11 +12,14 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    TListerConfig cfg;
-    TFileIndex fileIndex("index");
-    TFileQueue queue(20);
-    TLister lister(cfg, fileIndex, queue);
-    lister.List(string(argv[1]));
+    TListerConfig listerConfig;
+    TLister lister(listerConfig);
+    vector<string> docs;
+    lister.List(string(argv[1]), docs);
+
+    TIndexerConfig indexerConfig;
+    TIndexer indexer(indexerConfig);
+    indexer.Index(docs, "index.idx", "index.dat");
 
     return 0;
 }

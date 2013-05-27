@@ -1,6 +1,4 @@
-#include "fileindex.h"
 #include "lister.h"
-#include "queue.h"
 
 #include <dirent.h>
 #include <stdio.h>
@@ -12,47 +10,33 @@ namespace NCodesearch {
 ////////////////////////////////////////////////////////////////
 // TLister
 
-TLister::TLister(const TListerConfig& config, TFileIndex& fileIndex, TFileQueue& fileQueue)
+TLister::TLister(const TListerConfig& config)
     : Config(config)
-    , FileIndex(fileIndex)
-    , FileQueue(fileQueue)
 {
-    config.Print(std::cerr);
-    std::cerr << "---------------------------------\n";
 }
 
-void TLister::List(const string& root) const {
-    List(root.c_str());
-    FileQueue.Finish();
-}
-
-void TLister::List(const char* root, unsigned int depth) const {
+void TLister::List(const char* root, vector<string>& docs, unsigned depth) const {
     DIR *dir;
     struct dirent* entry;
 
-    if (!(dir = opendir(root))) {
-        // FIXME report error
+    // TODO: report errors
+    if (!(dir = opendir(root)))
         return;
-    }
-    if (!(entry = readdir(dir))) {
-        // FIXME report error
+    if (!(entry = readdir(dir)))
         return;
-    }
 
     char fullName[4096];
     do {
-        int len = snprintf(fullName, sizeof(fullName) - 1, "%s/%s", root, entry->d_name);
-        fullName[len] = 0;
+        int len = snprintf(fullName, sizeof(fullName), "%s/%s", root, entry->d_name);
         if (entry->d_type == DT_DIR) {
             if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
                 continue;
             if (Config.IgnoreHidden && entry->d_name[0] == '.')
                 continue;
             if (Config.Recursive && depth < Config.MaxDepth)
-                List(fullName, depth + 1);
-        } else {
-            FileIndex.Insert(fullName);
-            FileQueue.Enqueue(fullName);
+                List(fullName, docs, depth + 1);
+        } else if (entry->d_type == DT_REG) {
+            docs.push_back(fullName);
         }
     } while (entry = readdir(dir));
     closedir(dir);
@@ -61,31 +45,21 @@ void TLister::List(const char* root, unsigned int depth) const {
 ////////////////////////////////////////////////////////////////
 // TListerConfig
 
-TListerConfig::TListerConfig() {
-    SetDefault();
-}
-
 void TListerConfig::SetDefault() {
     Recursive = true;
     IgnoreHidden = true;
     ListDirectories = false;
 
-    MaxDepth = -1; // infinite
+    MaxDepth = INFINITE;
 }
 
 void TListerConfig::Print(ostream& output) const {
-#define OUTPUT_VALUE(name, specifier) \
-    snprintf(buffer, sizeof(buffer), "%*s : " specifier, 20, #name, name); \
-    output << buffer << '\n';
-
     char buffer[64];
-    OUTPUT_VALUE(Recursive, "%d")
-    OUTPUT_VALUE(IgnoreHidden, "%d")
-    OUTPUT_VALUE(ListDirectories, "%d")
+    OUTPUT_CONFIG_VALUE(Recursive, "%d")
+    OUTPUT_CONFIG_VALUE(IgnoreHidden, "%d")
+    OUTPUT_CONFIG_VALUE(ListDirectories, "%d")
     output << '\n';
-    OUTPUT_VALUE(MaxDepth, "%u")
-
-#undef OUTPUT_VALUE
+    OUTPUT_CONFIG_VALUE(MaxDepth, "%u")
 }
 
 } // NCodesearch

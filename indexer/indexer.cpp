@@ -1,40 +1,86 @@
 #include "indexer.h"
-#include "queue.h"
+
+#include <base/types.h>
 
 #include <fstream>
 #include <iostream>
 #include <vector>
 
-using std::ifstream;
-using std::vector;
+using namespace std;
+
+template <typename T>
+inline void Write(ostream& output, T value/*, size_t& written*/) {
+    output.write(reinterpret_cast<const char*>(&value), sizeof(T));
+    //written += sizeof(T);
+}
+
+template <typename T>
+inline void Read(istream& input, T& value) {
+    input.read(reinterpret_cast<char*>(&value), sizeof(T));
+}
 
 namespace NCodesearch {
 
 ////////////////////////////////////////////////////////////////
-// TIndexerWorker
+// TIndexer
 
-void TIndexerWorker::IndexFile(const char* filename) {
-    // TODO filter text files
-    ifstream input(filename);
-    vector<char> buffer(4096);
-    input.rdbuf()->pubsetbuf(&buffer[0], buffer.size());
+TIndexer::TIndexer(const TIndexerConfig& config)
+    : Config(config)
+    , Offset(0)
+{
+}
 
-    char last[3]; // TODO Ngram
-    input.get(last[0]);
-    input.get(last[1]);
-    while (input.get(last[2])) {
-        unsigned trigram = (last[0] << 16) | (last[1] << 8) | last[2];
-        std::cerr << "3: " << trigram << '\n';
-        last[0] = last[1];
-        last[1] = last[2];
+void TIndexer::Index(const vector<string>& files, const char* idxFile, const char* datFile) {
+    ofstream idxOutput(idxFile);
+    ofstream datOutput(datFile);
+    vector<char> idxBuffer(1 << 13);
+    vector<char> datBuffer(1 << 13);
+    idxOutput.rdbuf()->pubsetbuf(&idxBuffer[0], idxBuffer.size());
+    datOutput.rdbuf()->pubsetbuf(&datBuffer[0], datBuffer.size());
+
+    TDocId filesCount = files.size();
+    Write(idxOutput, filesCount);
+    for (TDocId i = 0; i < filesCount; ++i) {
+        Write(idxOutput, Offset);
+        Write(datOutput, static_cast<TOffset>(files[i].size()));
+        datOutput << files[i];
+        Offset += sizeof(TOffset) + files[i].size();
     }
+
+    for (TDocId i = 0; i < filesCount; ++i)
+        Index(i, files[i].c_str(), idxOutput, datOutput);
+    if (Chunk.Size)
+        FlushChunk(idxOutput, datOutput);
+}
+
+void TIndexer::Index(TDocId docId, const char* filename, ostream& idxOutput, ostream& datOutput) {
+}
+
+void TIndexer::FlushChunk(ostream& idxOutput, ostream& datOutput) {
+    for (vector<TPostingList>::iterator it = Chunk.Lists.begin(); it != Chunk.Lists.end(); ++it) {
+        Write(idxOutput, Offset);
+        // TODO: serialize *it
+        // Offset += size;
+        it->clear();
+        it->shrink_to_fit();
+    }
+    Chunk.Size = 0;
 }
 
 ////////////////////////////////////////////////////////////////
-// TIndexer
+// TIndexerConfig
 
-//TIndexer::TIndexer() {
-//}
+void TIndexerConfig::SetDefault() {
+    ChunkSize = 1 << 27;
+    CompressionMethod = 0;  // FIXME: efficient compression
+}
+
+void TIndexerConfig::Print(ostream& output) const {
+    char buffer[64];
+    OUTPUT_CONFIG_VALUE(ChunkSize, "%lu");
+    OUTPUT_CONFIG_HEADER(CompressionMethod);
+    output << CompressionMethod << '\n';  // TODO: literal repesentation
+}
 
 } // NCodesearch
 

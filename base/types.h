@@ -1,10 +1,16 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
+#include <vector>
 
 namespace NCodesearch {
 
-typedef size_t TFileId;
+typedef uint32_t TDocId;
+typedef uint32_t TOffset;
+typedef uint32_t TTrigram;
+
+typedef std::vector<TDocId> TPostingList;
 
 }
 
