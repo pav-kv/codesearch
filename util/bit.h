@@ -14,8 +14,8 @@ inline void Write(ostream& output, T value, size_t& written) {
 }
 
 template <typename T>
-inline void Read(istream& input, T& value) {
-    input.read(reinterpret_cast<char*>(&value), sizeof(T));
+inline istream& Read(istream& input, T& value) {
+    return input.read(reinterpret_cast<char*>(&value), sizeof(T));
 }
 
 namespace NCodesearch {

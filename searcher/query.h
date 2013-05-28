@@ -32,24 +32,25 @@ struct TQueryTreeNode {
 };
 
 struct TQueryTermNode : public TQueryTreeNode {
-    TQueryTermNode(const TPostingList& list)
+    TTrigram Trigram;
+    const TPostingList* List;
+    size_t Cur;
+
+    TQueryTermNode(TTrigram tri, const TPostingList* list = NULL)
         : TQueryTreeNode(NODE_TERM)
+        , Trigram(tri)
         , List(list)
         , Cur(0)
     {
     }
 
     virtual TDocId Peek() {
-        return Cur < List.size() ? List[Cur] : DOCS_END;
+        return Cur < List->size() ? (*List)[Cur] : DOCS_END;
     }
 
     virtual TDocId Next() {
-        return Cur < List.size() ? List[Cur++] : DOCS_END;
+        return Cur < List->size() ? (*List)[Cur++] : DOCS_END;
     }
-
-private:
-    const TPostingList& List;
-    size_t Cur;
 };
 
 struct TQueryAndNode : public TQueryTreeNode {

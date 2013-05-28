@@ -23,6 +23,7 @@ namespace NCodesearch {
 TIndexer::TIndexer(const TIndexerConfig& config)
     : Config(config)
     , Offset(0)
+    , ChunkNumber(0)
 {
     if (Config.Verbose) {
         cerr << "Indexer config:\n";
@@ -90,6 +91,7 @@ void TIndexer::Index(TDocId docId, const char* filename, ostream& idxOutput, ost
 void TIndexer::FlushChunk(ostream& idxOutput, ostream& datOutput) {
     if (Config.Verbose)
         cerr << "Flush: " << Chunk.Size << '\n';
+    Write(idxOutput, ChunkNumber);
     for (TTrigram tri = 0; tri < Chunk.Lists.size(); ++tri) {
         Write(idxOutput, Offset);
         TPostingList& list = Chunk.Lists[tri];
@@ -106,6 +108,7 @@ void TIndexer::FlushChunk(ostream& idxOutput, ostream& datOutput) {
     }
     Write(idxOutput, Offset);
     Chunk.Size = 0;
+    ++ChunkNumber;
 }
 
 ////////////////////////////////////////////////////////////////

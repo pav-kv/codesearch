@@ -60,6 +60,7 @@ private:
     TOffset Offset;
     TEncoder* Encoder;
     vector<TDocId> LastDocs;
+    uint32_t ChunkNumber;
 };
 
 } // NCodesearch

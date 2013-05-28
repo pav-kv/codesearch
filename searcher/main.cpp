@@ -1,7 +1,7 @@
+#include "searcher.h"
 #include "query.h"
 
 #include <base/types.h>
-#include <util/code.h>
 
 #include <fstream>
 #include <iostream>
@@ -11,60 +11,32 @@
 using namespace std;
 using namespace NCodesearch;
 
+TSearchQuery GetQuery(const string& query, size_t pos = 0) {
+    TTrigram tri = TByte(query[pos]) | (TByte(query[pos + 1]) << 8) | (TByte(query[pos + 2]) << 16);
+    TQueryTreeNode* term = new TQueryTermNode(tri);
+    if (pos + 3 < query.size()) {
+        TQueryTreeNode* right = GetQuery(query, pos + 1);
+        TQueryTreeNode* root = new TQueryAndNode(term, right);
+        return root;
+    }
+    return term;
+}
+
 int main(int argc, char** argv) {
-    if (argc < 2) {
-        cout << "Usage: " << argv[0] << " <trigram>\n";
+    if (argc < 3) {
+        cout << "Usage: " << argv[0] << " <index> <query>\n";
         return 1;
     }
 
-    string trigram;
-    cin >> trigram;
-    TTrigram tri = TByte(trigram[0]) | (TByte(trigram[1]) << 8) | (TByte(trigram[2]) << 16);
+    TSearchQuery query = GetQuery(argv[2]);
 
-    ifstream idxInput("index.idx");
-    ifstream datInput("index.dat");
-    vector<char> idxBuffer(1 << 13);
-    vector<char> datBuffer(1 << 13);
-    idxInput.rdbuf()->pubsetbuf(&idxBuffer[0], idxBuffer.size());
-    datInput.rdbuf()->pubsetbuf(&datBuffer[0], datBuffer.size());
-
-    TDocId N = 0;
-    uint32_t compression;
-    Read(idxInput, compression);
-    Read(idxInput, N);
-    idxInput.seekg(N * sizeof(TOffset), ios_base::cur);
-    ifstream::pos_type pos = idxInput.tellg();
-    idxInput.seekg(tri * sizeof(TOffset), ios_base::cur);
-    TOffset offset, nextOffset;
-    Read(idxInput, offset);
-    Read(idxInput, nextOffset);
-    if (offset > nextOffset) {
-        cerr << "Error\n";
-        return 0;
-    }
-    if (offset == nextOffset) {
-        cerr << "Not found\n";
-        return 0;
-    }
-
-    datInput.seekg(offset);
-    TEncoder* decoder = CreateEncoder(static_cast<ECompression>(compression));
-    TPostingList list;
-    decoder->Decode(datInput, list);
-
-    ++list[0];
-    idxInput.seekg(sizeof(uint32_t) + sizeof(TDocId));
-    for (size_t i = 0; i < list.size(); ++i) {
-        idxInput.seekg((list[i] - 1) * sizeof(TOffset), ios_base::cur);
-        Read(idxInput, offset);
-        datInput.seekg(offset);
-        TOffset size = 0;
-        Read(datInput, size);
-        vector<char> str(size);
-        datInput.read(&str[0], size);
-        str.push_back(0);
-        puts(&str[0]);
-    }
+    string indexPath = argv[1];
+    string idxPath = indexPath + ".idx";
+    string datPath = indexPath + ".dat";
+    TSearcherConfig config;
+    config.Verbose = true;
+    TSearcher searcher(config);
+    searcher.Search(idxPath.c_str(), datPath.c_str(), query, cout);
 
     return 0;
 }
