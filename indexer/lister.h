@@ -2,11 +2,11 @@
 
 #include <base/config.h>
 
+#include <iostream>
 #include <string>
 #include <vector>
 
-using std::string;
-using std::vector;
+using namespace std;
 
 namespace NCodesearch {
 
@@ -15,6 +15,7 @@ public:
     static const unsigned INFINITE = -1;
 
 public:
+    bool Verbose;
     bool Recursive;
     bool IgnoreHidden;
     bool ListDirectories;
@@ -35,6 +36,8 @@ public:
     explicit TLister(const TListerConfig& config);
 
     void List(const string& root, vector<string>& docs) const {
+        if (Config.Verbose)
+            cerr << "List: " << root << '\n';
         List(root.c_str(), docs);
     }
 

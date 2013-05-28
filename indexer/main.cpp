@@ -7,20 +7,26 @@ using std::cout;
 using namespace NCodesearch;
 
 int main(int argc, char** argv) {
-    if (argc < 2) {
-        std::cout << "Usage: " << argv[0] << " <directory>\n";
+    if (argc < 3) {
+        std::cout << "Usage: " << argv[0] << " <directory> <index>\n";
         return 1;
     }
 
     TListerConfig listerConfig;
+    listerConfig.Verbose = true;
     TLister lister(listerConfig);
     vector<string> docs;
     lister.List(string(argv[1]), docs);
 
     TIndexerConfig indexerConfig;
-    indexerConfig.CompressionMethod = 0; // TODO: enum compression methods
+    indexerConfig.Verbose = true;
+    indexerConfig.CompressionMethod = C_ELIAS_DELTA;
     TIndexer indexer(indexerConfig);
-    indexer.Index(docs, "index.idx", "index.dat");
+
+    string indexPath = argv[2];
+    string idxPath = indexPath + ".idx";
+    string datPath = indexPath + ".dat";
+    indexer.Index(docs, idxPath.c_str(), datPath.c_str());
 
     return 0;
 }

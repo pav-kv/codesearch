@@ -15,8 +15,10 @@ class TEncoder;
 
 class TIndexerConfig : public TConfigBase {
 public:
+    bool Verbose;
+
     size_t ChunkSize;
-    int CompressionMethod;
+    ECompression CompressionMethod;
 
 public:
     TIndexerConfig() {

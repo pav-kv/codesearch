@@ -24,20 +24,26 @@ TIndexer::TIndexer(const TIndexerConfig& config)
     : Config(config)
     , Offset(0)
 {
+    if (Config.Verbose) {
+        cerr << "Indexer config:\n";
+        Config.Print(cerr);
+        cerr << "===============\n";
+    }
+
     switch (Config.CompressionMethod) {
-        case 0:
+        case C_NONE:
             Encoder = new TSimpleEncoder();
             break;
-        case 1:
+        case C_ELIAS_GAMMA:
             Encoder = new TeliasGammaEncoder();
             break;
-        case 2:
+        case C_ELIAS_DELTA:
             Encoder = new TeliasDeltaEncoder();
             break;
-        case 3:
+        case C_VBYTE:
             Encoder = new TvByteEncoder();
             break;
-        case 4:
+        case C_PFOR_DELTA:
             Encoder = new TpforDeltaEncoder();
             break;
     }
@@ -69,7 +75,8 @@ void TIndexer::Index(const vector<string>& files, const char* idxFile, const cha
 }
 
 void TIndexer::Index(TDocId docId, const char* filename, ostream& idxOutput, ostream& datOutput) {
-    cerr << "Indexing: " << filename << '\n';
+    if (Config.Verbose)
+        cerr << "Indexing: " << filename << '\n';
     ifstream input(filename);
     vector<char> buffer(1 << 13);
     input.rdbuf()->pubsetbuf(&buffer[0], buffer.size());
@@ -83,17 +90,18 @@ void TIndexer::Index(TDocId docId, const char* filename, ostream& idxOutput, ost
         TTrigram tri = TByte(chars[0]) | (TByte(chars[1]) << 8) | (TByte(chars[2]) << 16);
         if (!used[tri]) {
             Chunk.Add(tri, docId);
-            if (Chunk.Size >= Config.ChunkSize)
-                FlushChunk(idxOutput, datOutput);
             used[tri] = true;
         }
         chars[0] = chars[1];
         chars[1] = chars[2];
     }
+    if (Chunk.Size >= Config.ChunkSize)
+        FlushChunk(idxOutput, datOutput);
 }
 
 void TIndexer::FlushChunk(ostream& idxOutput, ostream& datOutput) {
-    cerr << "Flush: " << Chunk.Size << '\n';
+    if (Config.Verbose)
+        cerr << "Flush: " << Chunk.Size << '\n';
     for (TTrigram tri = 0; tri < Chunk.Lists.size(); ++tri) {
         Write(idxOutput, Offset);
         TPostingList& list = Chunk.Lists[tri];
@@ -116,15 +124,17 @@ void TIndexer::FlushChunk(ostream& idxOutput, ostream& datOutput) {
 // TIndexerConfig
 
 void TIndexerConfig::SetDefault() {
+    Verbose = false;
     ChunkSize = 1 << 27;
-    CompressionMethod = 0;
+    CompressionMethod = C_NONE;
 }
 
 void TIndexerConfig::Print(ostream& output) const {
     char buffer[64];
+    OUTPUT_CONFIG_VALUE(Verbose, "%d");
     OUTPUT_CONFIG_VALUE(ChunkSize, "%lu");
     OUTPUT_CONFIG_HEADER(CompressionMethod);
-    output << CompressionMethod << '\n';  // TODO: literal repesentation
+    output << buffer << CompressionMethod << '\n';  // TODO: literal repesentation
 }
 
 } // NCodesearch

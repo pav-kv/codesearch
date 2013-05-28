@@ -15,5 +15,13 @@ typedef std::vector<TDocId> TPostingList;
 
 const size_t TRI_COUNT = 1 << 24;
 
+enum ECompression {
+    C_NONE,
+    C_ELIAS_GAMMA,
+    C_ELIAS_DELTA,
+    C_VBYTE,
+    C_PFOR_DELTA,
+};
+
 }
 

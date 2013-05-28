@@ -13,17 +13,27 @@ namespace NCodesearch {
 TLister::TLister(const TListerConfig& config)
     : Config(config)
 {
+    if (Config.Verbose) {
+        cerr << "Lister config:\n";
+        Config.Print(cerr);
+        cerr << "==============\n";
+    }
 }
 
 void TLister::List(const char* root, vector<string>& docs, unsigned depth) const {
     DIR *dir;
     struct dirent* entry;
 
-    // TODO: report errors
-    if (!(dir = opendir(root)))
+    if (!(dir = opendir(root))) {
+        if (Config.Verbose)
+            cerr << "Could not open dir: " << root << '\n';
         return;
-    if (!(entry = readdir(dir)))
+    }
+    if (!(entry = readdir(dir))) {
+        if (Config.Verbose)
+            cerr << "Could not read dir: " << root << '\n';
         return;
+    }
 
     char fullName[4096];
     do {
@@ -49,12 +59,14 @@ void TListerConfig::SetDefault() {
     Recursive = true;
     IgnoreHidden = true;
     ListDirectories = false;
+    Verbose = false;
 
     MaxDepth = INFINITE;
 }
 
 void TListerConfig::Print(ostream& output) const {
     char buffer[64];
+    OUTPUT_CONFIG_VALUE(Verbose, "%d")
     OUTPUT_CONFIG_VALUE(Recursive, "%d")
     OUTPUT_CONFIG_VALUE(IgnoreHidden, "%d")
     OUTPUT_CONFIG_VALUE(ListDirectories, "%d")
