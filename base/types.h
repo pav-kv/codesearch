@@ -13,5 +13,7 @@ typedef uint32_t TTrigram;
 
 typedef std::vector<TDocId> TPostingList;
 
+const size_t TRI_COUNT = 1 << 24;
+
 }
 
