@@ -24,7 +24,23 @@ TIndexer::TIndexer(const TIndexerConfig& config)
     : Config(config)
     , Offset(0)
 {
-    Encoder = new TSimpleEncoder();  // TODO: choose encoder from config
+    switch (Config.CompressionMethod) {
+        case 0:
+            Encoder = new TSimpleEncoder();  // TODO: choose encoder from config
+            break;
+        case 1:
+            Encoder = new TeliasGammaEncoder();
+            break;
+        case 2:
+            Encoder = new TeliasDeltaEncoder();
+            break;
+        case 3:
+            Encoder = new TvByteEncoder();
+            break;
+        case 4:
+            Encoder = new TpforDeltaEncoder();
+            break;
+    }
 }
 
 void TIndexer::Index(const vector<string>& files, const char* idxFile, const char* datFile) {
@@ -61,11 +77,15 @@ void TIndexer::Index(TDocId docId, const char* filename, ostream& idxOutput, ost
     chars[4] = 0;
     if (!input.get(chars[0]) || !input.get(chars[1]))
         return;
+    vector<bool> used(1 << 24);
     while (input.get(chars[2])) {
         TTrigram tri = TByte(chars[0]) | (TByte(chars[1]) << 8) | (TByte(chars[2]) << 16);
-        Chunk.Add(tri, docId);
-        if (Chunk.Size >= Config.ChunkSize)
-            FlushChunk(idxOutput, datOutput);
+        if (!used[tri]) {
+            Chunk.Add(tri, docId);
+            if (Chunk.Size >= Config.ChunkSize)
+                FlushChunk(idxOutput, datOutput);
+            used[tri] = true;
+        }
         chars[0] = chars[1];
         chars[1] = chars[2];
     }
@@ -75,9 +95,15 @@ void TIndexer::FlushChunk(ostream& idxOutput, ostream& datOutput) {
     cout << "Flush: " << Chunk.Size << '\n';
     for (vector<TPostingList>::iterator it = Chunk.Lists.begin(); it != Chunk.Lists.end(); ++it) {
         Write(idxOutput, Offset);
-        Offset += Encoder->Encode(datOutput, *it);
-        it->clear();
-        it->shrink_to_fit();
+        TPostingList& list = *it;
+        if (list.empty())
+            continue;
+        // FIXME delta between chunks must not be 0
+        for (size_t i = list.size() - 1; i; --i)
+            list[i] -= list[i - 1];
+        Offset += Encoder->Encode(datOutput, list);
+        list.clear();
+        list.shrink_to_fit();
     }
     Chunk.Size = 0;
 }

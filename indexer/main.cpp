@@ -18,6 +18,7 @@ int main(int argc, char** argv) {
     lister.List(string(argv[1]), docs);
 
     TIndexerConfig indexerConfig;
+    indexerConfig.CompressionMethod = 2;
     TIndexer indexer(indexerConfig);
     indexer.Index(docs, "index.idx", "index.dat");
 
