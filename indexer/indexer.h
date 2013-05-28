@@ -56,6 +56,9 @@ private:
     TIndexChunk Chunk;
     TOffset Offset;
     TEncoder* Encoder;
+    vector<TDocId> LastDocs;
+
+    static const size_t TRI_COUNT = 1 << 24;
 };
 
 } // NCodesearch

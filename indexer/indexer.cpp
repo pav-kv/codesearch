@@ -26,7 +26,7 @@ TIndexer::TIndexer(const TIndexerConfig& config)
 {
     switch (Config.CompressionMethod) {
         case 0:
-            Encoder = new TSimpleEncoder();  // TODO: choose encoder from config
+            Encoder = new TSimpleEncoder();
             break;
         case 1:
             Encoder = new TeliasGammaEncoder();
@@ -60,7 +60,8 @@ void TIndexer::Index(const vector<string>& files, const char* idxFile, const cha
         Offset += sizeof(TOffset) + files[i].size();
     }
 
-    Chunk.Lists.resize(1 << 24);
+    Chunk.Lists.resize(TRI_COUNT);
+    LastDocs.resize(TRI_COUNT);
     for (TDocId i = 0; i < filesCount; ++i)
         Index(i, files[i].c_str(), idxOutput, datOutput);
     if (Chunk.Size)
@@ -68,7 +69,7 @@ void TIndexer::Index(const vector<string>& files, const char* idxFile, const cha
 }
 
 void TIndexer::Index(TDocId docId, const char* filename, ostream& idxOutput, ostream& datOutput) {
-    cout << "Index: " << filename << '\n';
+    cerr << "Indexing: " << filename << '\n';
     ifstream input(filename);
     vector<char> buffer(1 << 13);
     input.rdbuf()->pubsetbuf(&buffer[0], buffer.size());
@@ -77,7 +78,7 @@ void TIndexer::Index(TDocId docId, const char* filename, ostream& idxOutput, ost
     chars[4] = 0;
     if (!input.get(chars[0]) || !input.get(chars[1]))
         return;
-    vector<bool> used(1 << 24);
+    vector<bool> used(TRI_COUNT);
     while (input.get(chars[2])) {
         TTrigram tri = TByte(chars[0]) | (TByte(chars[1]) << 8) | (TByte(chars[2]) << 16);
         if (!used[tri]) {
@@ -92,19 +93,22 @@ void TIndexer::Index(TDocId docId, const char* filename, ostream& idxOutput, ost
 }
 
 void TIndexer::FlushChunk(ostream& idxOutput, ostream& datOutput) {
-    cout << "Flush: " << Chunk.Size << '\n';
-    for (vector<TPostingList>::iterator it = Chunk.Lists.begin(); it != Chunk.Lists.end(); ++it) {
+    cerr << "Flush: " << Chunk.Size << '\n';
+    for (TTrigram tri = 0; tri < Chunk.Lists.size(); ++tri) {
         Write(idxOutput, Offset);
-        TPostingList& list = *it;
+        TPostingList& list = Chunk.Lists[tri];
         if (list.empty())
             continue;
-        // FIXME delta between chunks must not be 0
+        TDocId lastDoc = list.back();
         for (size_t i = list.size() - 1; i; --i)
             list[i] -= list[i - 1];
+        list[0] -= LastDocs[tri];
+        LastDocs[tri] = lastDoc;
         Offset += Encoder->Encode(datOutput, list);
         list.clear();
         list.shrink_to_fit();
     }
+    Write(idxOutput, Offset);
     Chunk.Size = 0;
 }
 
