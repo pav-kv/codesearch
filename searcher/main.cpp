@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
         idxInput.seekg((list[i] - 1) * sizeof(TOffset), ios_base::cur);
         Read(idxInput, offset);
         datInput.seekg(offset);
-        size_t size = 0;
+        TOffset size = 0;
         Read(datInput, size);
         vector<char> str(size);
         datInput.read(&str[0], size);
