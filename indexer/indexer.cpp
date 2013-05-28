@@ -1,6 +1,7 @@
 #include "indexer.h"
 
 #include <base/types.h>
+#include <util/code.h>
 
 #include <fstream>
 #include <iostream>
@@ -14,11 +15,6 @@ inline void Write(ostream& output, T value/*, size_t& written*/) {
     //written += sizeof(T);
 }
 
-template <typename T>
-inline void Read(istream& input, T& value) {
-    input.read(reinterpret_cast<char*>(&value), sizeof(T));
-}
-
 namespace NCodesearch {
 
 ////////////////////////////////////////////////////////////////
@@ -28,6 +24,7 @@ TIndexer::TIndexer(const TIndexerConfig& config)
     : Config(config)
     , Offset(0)
 {
+    Encoder = new TSimpleEncoder();  // TODO: choose encoder from config
 }
 
 void TIndexer::Index(const vector<string>& files, const char* idxFile, const char* datFile) {
@@ -47,6 +44,7 @@ void TIndexer::Index(const vector<string>& files, const char* idxFile, const cha
         Offset += sizeof(TOffset) + files[i].size();
     }
 
+    Chunk.Lists.resize(1 << 24);
     for (TDocId i = 0; i < filesCount; ++i)
         Index(i, files[i].c_str(), idxOutput, datOutput);
     if (Chunk.Size)
@@ -54,13 +52,30 @@ void TIndexer::Index(const vector<string>& files, const char* idxFile, const cha
 }
 
 void TIndexer::Index(TDocId docId, const char* filename, ostream& idxOutput, ostream& datOutput) {
+    cout << "Index: " << filename << '\n';
+    ifstream input(filename);
+    vector<char> buffer(1 << 13);
+    input.rdbuf()->pubsetbuf(&buffer[0], buffer.size());
+
+    char chars[4];
+    chars[4] = 0;
+    if (!input.get(chars[0]) || !input.get(chars[1]))
+        return;
+    while (input.get(chars[2])) {
+        TTrigram tri = TByte(chars[0]) | (TByte(chars[1]) << 8) | (TByte(chars[2]) << 16);
+        Chunk.Add(tri, docId);
+        if (Chunk.Size >= Config.ChunkSize)
+            FlushChunk(idxOutput, datOutput);
+        chars[0] = chars[1];
+        chars[1] = chars[2];
+    }
 }
 
 void TIndexer::FlushChunk(ostream& idxOutput, ostream& datOutput) {
+    cout << "Flush: " << Chunk.Size << '\n';
     for (vector<TPostingList>::iterator it = Chunk.Lists.begin(); it != Chunk.Lists.end(); ++it) {
         Write(idxOutput, Offset);
-        // TODO: serialize *it
-        // Offset += size;
+        Offset += Encoder->Encode(datOutput, *it);
         it->clear();
         it->shrink_to_fit();
     }
@@ -72,7 +87,7 @@ void TIndexer::FlushChunk(ostream& idxOutput, ostream& datOutput) {
 
 void TIndexerConfig::SetDefault() {
     ChunkSize = 1 << 27;
-    CompressionMethod = 0;  // FIXME: efficient compression
+    CompressionMethod = 0;
 }
 
 void TIndexerConfig::Print(ostream& output) const {

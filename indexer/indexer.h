@@ -11,6 +11,8 @@ using namespace std;
 
 namespace NCodesearch {
 
+class TEncoder;
+
 class TIndexerConfig : public TConfigBase {
 public:
     size_t ChunkSize;
@@ -36,6 +38,7 @@ struct TIndexChunk {
 
     void Add(TTrigram trigram, TDocId docId) {
         Lists[trigram].push_back(docId);
+        ++Size;
     }
 };
 
@@ -52,6 +55,7 @@ private:
     TIndexerConfig Config;
     TIndexChunk Chunk;
     TOffset Offset;
+    TEncoder* Encoder;
 };
 
 } // NCodesearch
