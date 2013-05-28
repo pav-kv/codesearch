@@ -1,3 +1,5 @@
+#include "query.h"
+
 #include <base/types.h>
 #include <util/code.h>
 
@@ -27,6 +29,8 @@ int main(int argc, char** argv) {
     datInput.rdbuf()->pubsetbuf(&datBuffer[0], datBuffer.size());
 
     TDocId N = 0;
+    uint32_t compression;
+    Read(idxInput, compression);
     Read(idxInput, N);
     idxInput.seekg(N * sizeof(TOffset), ios_base::cur);
     ifstream::pos_type pos = idxInput.tellg();
@@ -44,12 +48,12 @@ int main(int argc, char** argv) {
     }
 
     datInput.seekg(offset);
-    TEncoder* encoder = new TSimpleEncoder();
+    TEncoder* decoder = CreateEncoder(static_cast<ECompression>(compression));
     TPostingList list;
-    encoder->Decode(datInput, list);
+    decoder->Decode(datInput, list);
 
     ++list[0];
-    idxInput.seekg(sizeof(TDocId));
+    idxInput.seekg(sizeof(uint32_t) + sizeof(TDocId));
     for (size_t i = 0; i < list.size(); ++i) {
         idxInput.seekg((list[i] - 1) * sizeof(TOffset), ios_base::cur);
         Read(idxInput, offset);

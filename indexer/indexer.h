@@ -47,6 +47,7 @@ struct TIndexChunk {
 class TIndexer {
 public:
     TIndexer(const TIndexerConfig& config);
+    ~TIndexer();
     void Index(const vector<string>& files, const char* idxFile, const char* datFile);
 
 private:

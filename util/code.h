@@ -199,5 +199,21 @@ public:
     }
 };
 
+TEncoder* CreateEncoder(ECompression compressionMethod) {
+    switch (compressionMethod) {
+    case C_NONE:
+        return new TSimpleEncoder();
+    case C_ELIAS_GAMMA:
+        return new TeliasGammaEncoder();
+    case C_ELIAS_DELTA:
+        return new TeliasDeltaEncoder();
+    case C_VBYTE:
+        return new TvByteEncoder();
+    case C_PFOR_DELTA:
+        return new TpforDeltaEncoder();
+    }
+    return NULL;
+}
+
 } // NCodesearch
 

@@ -29,24 +29,11 @@ TIndexer::TIndexer(const TIndexerConfig& config)
         Config.Print(cerr);
         cerr << "===============\n";
     }
+    Encoder = CreateEncoder(Config.CompressionMethod);
+}
 
-    switch (Config.CompressionMethod) {
-        case C_NONE:
-            Encoder = new TSimpleEncoder();
-            break;
-        case C_ELIAS_GAMMA:
-            Encoder = new TeliasGammaEncoder();
-            break;
-        case C_ELIAS_DELTA:
-            Encoder = new TeliasDeltaEncoder();
-            break;
-        case C_VBYTE:
-            Encoder = new TvByteEncoder();
-            break;
-        case C_PFOR_DELTA:
-            Encoder = new TpforDeltaEncoder();
-            break;
-    }
+TIndexer::~TIndexer() {
+    if (Encoder) delete Encoder;
 }
 
 void TIndexer::Index(const vector<string>& files, const char* idxFile, const char* datFile) {
@@ -58,6 +45,7 @@ void TIndexer::Index(const vector<string>& files, const char* idxFile, const cha
     datOutput.rdbuf()->pubsetbuf(&datBuffer[0], datBuffer.size());
 
     TDocId filesCount = files.size();
+    Write(idxOutput, static_cast<uint32_t>(Config.CompressionMethod));
     Write(idxOutput, filesCount);
     for (TDocId i = 0; i < filesCount; ++i) {
         Write(idxOutput, Offset);
