@@ -101,6 +101,7 @@ void TSearcher::BindChunkToQuery(ifstream& idxInput, ifstream& datInput, TQueryT
     term->List = &list;
     term->Cur = 0;
 
+    bool newList = false;
     if (list.empty()) {
         idxInput.seekg(Pos + static_cast<istream::off_type>(tri * sizeof(TOffset)));
         TOffset offset, nextOffset;
@@ -109,9 +110,10 @@ void TSearcher::BindChunkToQuery(ifstream& idxInput, ifstream& datInput, TQueryT
         if (nextOffset > offset) {
             datInput.seekg(offset);
             Decoder->Decode(datInput, list);
+            newList = true;
         }
     }
-    if (!list.empty()) {
+    if (newList && !list.empty()) {
         list[0] += item.LastDoc;
         for (size_t i = 1; i < list.size(); ++i)
             list[i] += list[i - 1];
