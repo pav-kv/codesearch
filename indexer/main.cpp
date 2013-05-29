@@ -20,7 +20,6 @@ int main(int argc, char** argv) {
 
     TIndexerConfig indexerConfig;
     indexerConfig.Verbose = true;
-    indexerConfig.CompressionMethod = C_ELIAS_DELTA;
     TIndexer indexer(indexerConfig);
 
     string indexPath = argv[2];

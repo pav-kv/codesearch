@@ -117,7 +117,7 @@ void TIndexer::FlushChunk(ostream& idxOutput, ostream& datOutput) {
 void TIndexerConfig::SetDefault() {
     Verbose = false;
     ChunkSize = 1 << 27;
-    CompressionMethod = C_NONE;
+    CompressionMethod = C_ELIAS_DELTA;
 }
 
 void TIndexerConfig::Print(ostream& output) const {
