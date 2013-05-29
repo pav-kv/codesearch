@@ -108,5 +108,59 @@ struct TQueryOrNode : public TQueryTreeNode {
 
 typedef TQueryTreeNode* TSearchQuery;
 
+class TQueryFactory {
+public:
+    static TQueryTreeNode* Parse(string query) {
+        query.push_back('\0');
+        size_t pos = 0;
+        return Parse(query.c_str(), pos);
+    }
+
+    static void Free(TQueryTreeNode* node) {
+        if (!node) return;
+        Free(node->Left);
+        Free(node->Right);
+        delete node;
+    }
+
+private:
+    static size_t GetControl(const char* query) {
+        size_t ret = 0;
+        for (const char* cur = query; *cur && ret < 3; ++cur, ++ret)
+            if (*cur == '&' || *cur == '|' || *cur == '(' || *cur == ')')
+                return ret;
+        return ret;
+    }
+
+    static TQueryTreeNode* Parse(const char* query, size_t& pos) {
+        TQueryTreeNode* node = NULL;
+
+        for (; ; ++pos) {
+            size_t control = GetControl(&query[pos]);
+            if (control == 0) {
+                if (!query[pos] || query[pos] == ')')
+                    break;
+                if (query[pos] == '|') {
+                    TQueryTreeNode* newNode = Parse(query, ++pos);
+                    node = new TQueryOrNode(node, newNode);
+                } else if (query[pos] == '(') {
+                    TQueryTreeNode* newNode = Parse(query, ++pos);
+                    if (!newNode) continue;
+                    node = node ? new TQueryAndNode(node, newNode) : newNode;
+                }
+                // on & just continue
+            } else if (control == 3) {
+                TTrigram tri = TByte(query[pos]) | (TByte(query[pos + 1]) << 8) | (TByte(query[pos + 2]) << 16);
+                TQueryTreeNode* triNode = new TQueryTermNode(tri);
+                node = node ? new TQueryAndNode(node, triNode) : triNode;
+            } else {
+                pos += control - 1;
+            }
+        }
+
+        return node;
+    }
+};
+
 } // NCodesearch
 

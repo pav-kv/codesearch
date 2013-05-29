@@ -1,7 +1,5 @@
 #pragma once
 
-#include "query.h"
-
 #include <base/config.h>
 #include <indexer/indexer.h>
 
@@ -13,6 +11,8 @@
 using namespace std;
 
 namespace NCodesearch {
+
+struct TQueryTreeNode;
 
 class TSearcherConfig : public TConfigBase {
 public:
@@ -30,7 +30,7 @@ public:
 class TSearcher {
 public:
     TSearcher(const TSearcherConfig& config);
-    void Search(const char* idxFile, const char* datFile, TSearchQuery query, ostream& output);
+    void Search(const char* idxFile, const char* datFile, TQueryTreeNode* query, ostream& output);
 
 private:
     void BindChunkToQuery(ifstream& idxInput, ifstream& datInput, TQueryTreeNode* node);

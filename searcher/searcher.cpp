@@ -1,4 +1,5 @@
 #include "searcher.h"
+#include "query.h"
 
 #include <util/bit.h>
 #include <util/code.h>
