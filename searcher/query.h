@@ -116,6 +116,26 @@ public:
         return Parse(query.c_str(), pos);
     }
 
+    static void Print(TQueryTreeNode* node, ostream& output, int depth = 0) {
+        for (int i = 0; i < depth; ++i)
+            output << ' ';
+        switch (node->Tag) {
+        case NODE_OR:
+            output << "OR\n";
+            Print(node->Left, output, depth + 2);
+            Print(node->Right, output, depth + 2);
+            break;
+        case NODE_AND:
+            output << "AND\n";
+            Print(node->Left, output, depth + 2);
+            Print(node->Right, output, depth + 2);
+            break;
+        case NODE_TERM:
+            output << "TRI: " << dynamic_cast<TQueryTermNode*>(node)->Trigram << '\n';
+            break;
+        }
+    }
+
     static void Free(TQueryTreeNode* node) {
         if (!node) return;
         Free(node->Left);
@@ -136,7 +156,7 @@ private:
         TQueryTreeNode* node = NULL;
 
         for (; ; ++pos) {
-            size_t control = GetControl(&query[pos]);
+            size_t control = GetControl(query + pos);
             if (control == 0) {
                 if (!query[pos] || query[pos] == ')')
                     break;

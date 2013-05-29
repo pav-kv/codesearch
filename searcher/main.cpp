@@ -22,7 +22,6 @@ int main(int argc, char** argv) {
     string idxPath = indexPath + ".idx";
     string datPath = indexPath + ".dat";
     TSearcherConfig config;
-    config.Verbose = true;
     TSearcher searcher(config);
     searcher.Search(idxPath.c_str(), datPath.c_str(), query, cout);
 

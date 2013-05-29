@@ -26,6 +26,12 @@ TSearcher::TSearcher(const TSearcherConfig& config)
 }
 
 void TSearcher::Search(const char* idxFile, const char* datFile, TSearchQuery query, ostream& output) {
+    if (Config.Verbose) {
+        cerr << "Query:\n";
+        TQueryFactory::Print(query, cerr);
+        cerr << "======\n";
+    }
+
     ifstream idxInput(idxFile);
     ifstream datInput(datFile);
     vector<char> idxBuffer(1 << 13);
