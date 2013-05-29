@@ -8,7 +8,7 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
-#include <unordered_set>
+#include <unordered_map>
 
 using namespace std;
 
@@ -37,10 +37,14 @@ private:
 
 private:
     TSearcherConfig Config;
-    TIndexChunk Chunk;
     TEncoder* Decoder;
     ifstream::pos_type Pos;
-    unordered_set<TTrigram> InQuery;
+
+    struct TCacheItem {
+        TDocId LastDoc;
+        TPostingList List;
+    };
+    unordered_map<TTrigram, TCacheItem> ChunkCache;
 };
 
 } // NCodesearch

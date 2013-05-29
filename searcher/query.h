@@ -76,8 +76,7 @@ struct TQueryAndNode : public TQueryTreeNode {
     }
 
     virtual TDocId Next() {
-        Peek();
-        return Left->Next();
+        return Peek() == DOCS_END ? DOCS_END : Left->Next();
     }
 };
 

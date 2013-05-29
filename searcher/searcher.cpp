@@ -41,7 +41,7 @@ void TSearcher::Search(const char* idxFile, const char* datFile, TSearchQuery qu
 
     TPostingList result;
     uint32_t chunkNumber;
-    Chunk.Lists.resize(TRI_COUNT);
+    TDocId lastDoc = 0;
     while (Read(idxInput, chunkNumber)) {
         if (Config.Verbose)
             cerr << "Searching in chunk " << chunkNumber << " ...\n";
@@ -49,10 +49,12 @@ void TSearcher::Search(const char* idxFile, const char* datFile, TSearchQuery qu
         BindChunkToQuery(idxInput, datInput, query);
         idxInput.seekg(Pos + static_cast<istream::off_type>((TRI_COUNT + 1) * sizeof(TOffset)));
         TDocId nextDoc;
-        while ((nextDoc = query->Next()) != DOCS_END)
-            result.push_back(nextDoc);
-        for (unordered_set<TTrigram>::const_iterator it = InQuery.begin(); it != InQuery.end(); ++it) {
-            TPostingList& list = Chunk.Lists[*it];
+        while ((nextDoc = query->Next()) != DOCS_END) {
+            result.push_back(nextDoc - lastDoc);
+            lastDoc = nextDoc;
+        }
+        for (unordered_map<TTrigram, TCacheItem>::iterator it = ChunkCache.begin(); it != ChunkCache.end(); ++it) {
+            TPostingList& list = it->second.List;
             list.clear();
             list.shrink_to_fit();
         }
@@ -87,8 +89,8 @@ void TSearcher::BindChunkToQuery(ifstream& idxInput, ifstream& datInput, TQueryT
 
     TQueryTermNode* term = dynamic_cast<TQueryTermNode*>(node);
     TTrigram tri = term->Trigram;
-    InQuery.insert(tri);
-    TPostingList& list = Chunk.Lists[tri];
+    TCacheItem& item = ChunkCache[tri];
+    TPostingList& list = item.List;
     term->List = &list;
     term->Cur = 0;
 
@@ -101,6 +103,12 @@ void TSearcher::BindChunkToQuery(ifstream& idxInput, ifstream& datInput, TQueryT
             datInput.seekg(offset);
             Decoder->Decode(datInput, list);
         }
+    }
+    if (!list.empty()) {
+        list[0] += item.LastDoc;
+        for (size_t i = 1; i < list.size(); ++i)
+            list[i] += list[i - 1];
+        item.LastDoc = list.back();
     }
 }
 
