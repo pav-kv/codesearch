@@ -12,8 +12,8 @@ using namespace std;
 using namespace NCodesearch;
 
 int main(int argc, char** argv) {
-    if (argc < 3) {
-        cout << "Usage: " << argv[0] << " <index> <query>\n";
+    if (argc < 4) {
+        cout << "Usage: " << argv[0] << " <index> <query> <regex>\n";
         return 1;
     }
 
@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
     string datPath = indexPath + ".dat";
     TSearcherConfig config;
     TSearcher searcher(config);
-    searcher.Search(idxPath.c_str(), datPath.c_str(), query, cout);
+    searcher.Search(idxPath.c_str(), datPath.c_str(), query, cout, argv[3]);
 
     TQueryFactory::Free(query);
 

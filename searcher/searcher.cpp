@@ -25,7 +25,7 @@ TSearcher::TSearcher(const TSearcherConfig& config)
     }
 }
 
-void TSearcher::Search(const char* idxFile, const char* datFile, TSearchQuery query, ostream& output) {
+void TSearcher::Search(const char* idxFile, const char* datFile, TSearchQuery query, ostream& output, const char* pattern) {
     if (Config.Verbose) {
         cerr << "Query:\n";
         TQueryFactory::Print(query, cerr);
@@ -68,6 +68,8 @@ void TSearcher::Search(const char* idxFile, const char* datFile, TSearchQuery qu
     }
     idxInput.clear();
 
+    TRegexParser parser(pattern); // TODO: check compilation
+
     if (!result.empty())
         ++result[0];
     idxInput.seekg(sizeof(uint32_t) + sizeof(TDocId));
@@ -80,8 +82,11 @@ void TSearcher::Search(const char* idxFile, const char* datFile, TSearchQuery qu
         Read(datInput, size);
         vector<char> str(size);
         datInput.read(&str[0], size);
-        str.push_back(0);
-        output << &str[0] << '\n';
+        string filename(str.begin(), str.end());
+        if (Config.JustFilter)
+            output << filename << '\n';
+        else
+            GrepFile(filename.c_str(), parser, output);
     }
 
     delete Decoder;
@@ -121,16 +126,37 @@ void TSearcher::BindChunkToQuery(ifstream& idxInput, ifstream& datInput, TQueryT
     }
 }
 
+void TSearcher::GrepFile(const char* filename, TRegexParser& parser, ostream& output) {
+    ifstream input(filename);
+    vector<char> buffer(1 << 13); // TODO: const
+    input.rdbuf()->pubsetbuf(&buffer[0], buffer.size());
+    string line;
+    size_t lineNumber = 0;
+    while (getline(input, line)) {
+        ++lineNumber;
+        if (!parser.Match(line.c_str()))
+            continue;
+        output << filename << ':';
+        if (Config.PrintLineNumbers)
+            output << lineNumber << ':';
+        output << line << '\n';
+    }
+}
+
 ////////////////////////////////////////////////////////////////
 // TSearcherConfig
 
 void TSearcherConfig::SetDefault() {
     Verbose = false;
+    PrintLineNumbers = true;
+    JustFilter = false;
 }
 
 void TSearcherConfig::Print(ostream& output) const {
     char buffer[64];
     OUTPUT_CONFIG_VALUE(Verbose, "%d");
+    OUTPUT_CONFIG_VALUE(PrintLineNumbers, "%d");
+    OUTPUT_CONFIG_VALUE(JustFilter, "%d");
 }
 
 } // NCodesearch

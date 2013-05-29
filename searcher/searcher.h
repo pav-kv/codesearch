@@ -2,6 +2,7 @@
 
 #include <base/config.h>
 #include <indexer/indexer.h>
+#include <util/regex.h>
 
 #include <fstream>
 #include <iostream>
@@ -17,6 +18,8 @@ struct TQueryTreeNode;
 class TSearcherConfig : public TConfigBase {
 public:
     bool Verbose;
+    bool PrintLineNumbers;
+    bool JustFilter;
 
 public:
     TSearcherConfig() {
@@ -30,10 +33,11 @@ public:
 class TSearcher {
 public:
     TSearcher(const TSearcherConfig& config);
-    void Search(const char* idxFile, const char* datFile, TQueryTreeNode* query, ostream& output);
+    void Search(const char* idxFile, const char* datFile, TQueryTreeNode* query, ostream& output, const char* pattern = NULL);
 
 private:
     void BindChunkToQuery(ifstream& idxInput, ifstream& datInput, TQueryTreeNode* node);
+    void GrepFile(const char* filename, TRegexParser& parser, ostream& output);
 
 private:
     TSearcherConfig Config;
