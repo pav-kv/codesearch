@@ -25,8 +25,8 @@ TSearcher::TSearcher(const TSearcherConfig& config)
 }
 
 void TSearcher::Search(const char* idxFile, const char* datFile, TSearchQuery query, ostream& output) {
-    ifstream idxInput("index.idx");
-    ifstream datInput("index.dat");
+    ifstream idxInput(idxFile);
+    ifstream datInput(datFile);
     vector<char> idxBuffer(1 << 13);
     vector<char> datBuffer(1 << 13);
     idxInput.rdbuf()->pubsetbuf(&idxBuffer[0], idxBuffer.size());
