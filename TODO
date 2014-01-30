@@ -1,0 +1,9 @@
+TODO:
+  * Store absolute paths in index
+  * Timers in verbose mode
+  * Program option parser, fully configurable binaries
+  * Regular expressions engine
+  * Extract trigrams from regular expression
+  * Memory mapped index
+  * Single producer - disk reader, multiple consumers - grep's
+  * Distributed codesearch
