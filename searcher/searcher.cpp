@@ -127,6 +127,8 @@ void TSearcher::BindChunkToQuery(ifstream& idxInput, ifstream& datInput, TQueryT
 }
 
 void TSearcher::GrepFile(const char* filename, TRegexParser& parser, ostream& output) {
+    if (Config.Verbose)
+        cerr << "Searching in file " << filename << "\n";
     ifstream input(filename);
     vector<char> buffer(1 << 13); // TODO: const
     input.rdbuf()->pubsetbuf(&buffer[0], buffer.size());

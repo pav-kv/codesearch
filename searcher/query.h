@@ -14,85 +14,123 @@ const int NODE_TERM    = 3;
 
 const TDocId DOCS_END  = static_cast<TDocId>(-1);
 
-struct TQueryTreeNode {
-    int Tag;
+class TQueryFactory;
+
+class TQueryTreeNode {
+public:
+    const int Tag;
+
     TQueryTreeNode* Left;
     TQueryTreeNode* Right;
 
+public:
     TQueryTreeNode(int tag = NODE_UNKNOWN, TQueryTreeNode* left = NULL, TQueryTreeNode* right = NULL)
         : Tag(tag)
         , Left(left)
         , Right(right)
-    {
+        , Cache(DOCS_END)
+        , UpToDate(false)
+    { /* no-op */ }
+
+    // TODO: smart pointers
+    virtual ~TQueryTreeNode() {
+        if (Left)
+            delete Left;
+        if (Right)
+            delete Right;
     }
 
-    virtual TDocId Peek() = 0;
-    virtual TDocId Next() = 0;
-    virtual ~TQueryTreeNode() { }
+    TDocId Peek() {
+        return DoPeek();
+        if (!UpToDate) {
+            Cache = DoPeek();
+            UpToDate = true;
+        }
+        return Cache;
+    }
+
+    TDocId Next() {
+        if (UpToDate && Cache == DOCS_END)
+            return DOCS_END;
+        TDocId next = DoNext();
+        UpToDate = false;
+        return next;
+    }
+
+private:
+    virtual TDocId DoPeek() = 0;
+    virtual TDocId DoNext() = 0;
+
+protected:
+    TDocId Cache;
+    bool UpToDate;
 };
 
-struct TQueryTermNode : public TQueryTreeNode {
-    TTrigram Trigram;
+class TQueryTermNode : public TQueryTreeNode {
+public:
+    const TTrigram Trigram;
     const TPostingList* List;
     size_t Cur;
 
+public:
     TQueryTermNode(TTrigram tri, const TPostingList* list = NULL)
         : TQueryTreeNode(NODE_TERM)
         , Trigram(tri)
         , List(list)
         , Cur(0)
-    {
-    }
+    { /* no-op */ }
 
-    virtual TDocId Peek() {
+private:
+    virtual TDocId DoPeek() {
         return Cur < List->size() ? (*List)[Cur] : DOCS_END;
     }
 
-    virtual TDocId Next() {
+    virtual TDocId DoNext() {
         return Cur < List->size() ? (*List)[Cur++] : DOCS_END;
     }
 };
 
-struct TQueryAndNode : public TQueryTreeNode {
+class TQueryAndNode : public TQueryTreeNode {
+public:
     TQueryAndNode(TQueryTreeNode* left, TQueryTreeNode* right)
         : TQueryTreeNode(NODE_AND, left, right)
-    {
-    }
+    { /* no-op */ }
 
-    virtual TDocId Peek() {
-        while (true) {
-            TDocId left = Left->Peek();
-            if (left == DOCS_END)
-                return DOCS_END;
-            TDocId right = DOCS_END;
-            while ((right = Right->Peek()) < left)
-                Right->Next();
-            if (right == left)
+private:
+    virtual TDocId DoPeek() {
+        for (TDocId left = Left->Peek(), right = Right->Peek(); left != DOCS_END && right != DOCS_END; ) {
+            if (left == right)
                 return left;
-            if (right == DOCS_END)
-                return DOCS_END;
-            Left->Next();
+            if (left < right) {
+                Left->Next();
+                left = Left->Peek();
+            } else {
+                Right->Next();
+                right = Right->Peek();
+            }
         }
+        return DOCS_END;
     }
 
-    virtual TDocId Next() {
+    virtual TDocId DoNext() {
         return Peek() == DOCS_END ? DOCS_END : Left->Next();
     }
 };
 
-struct TQueryOrNode : public TQueryTreeNode {
+class TQueryOrNode : public TQueryTreeNode {
+public:
     TQueryOrNode(TQueryTreeNode* left, TQueryTreeNode* right)
         : TQueryTreeNode(NODE_OR, left, right)
-    {
-    }
+    { /* no-op */ }
 
-    virtual TDocId Peek() {
+private:
+    virtual TDocId DoPeek() {
         TDocId left = Left->Peek();
         TDocId right = Right->Peek();
         return min(left, right);
     }
 
-    virtual TDocId Next() {
+    virtual TDocId DoNext() {
         TDocId left = Left->Peek();
         TDocId right = Right->Peek();
         if (left < right)
@@ -116,7 +154,7 @@ public:
         return Parse(query.c_str(), pos);
     }
 
-    static void Print(TQueryTreeNode* node, ostream& output, int depth = 0) {
+    static void Print(const TQueryTreeNode* node, ostream& output, int depth = 0) {
         for (int i = 0; i < depth; ++i)
             output << ' ';
         switch (node->Tag) {
@@ -131,16 +169,15 @@ public:
             Print(node->Right, output, depth + 2);
             break;
         case NODE_TERM:
-            output << "TRI: " << dynamic_cast<TQueryTermNode*>(node)->Trigram << '\n';
+            output << "TRI: " << dynamic_cast<const TQueryTermNode*>(node)->Trigram << '\n';
             break;
         }
     }
 
-    static void Free(TQueryTreeNode* node) {
-        if (!node) return;
-        Free(node->Left);
-        Free(node->Right);
-        delete node;
+    static void Free(TSearchQuery& query) {
+        if (!query) return;
+        delete query;
+        query = NULL;
     }
 
 private:
