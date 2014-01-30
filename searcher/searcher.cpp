@@ -48,7 +48,7 @@ void TSearcher::Search(const char* idxFile, const char* datFile, TSearchQuery qu
 
     TPostingList result;
     uint32_t chunkNumber;
-    TDocId lastDoc = 0;
+    TDocId lastDoc = 1;
     while (Read(idxInput, chunkNumber)) {
         if (Config.Verbose)
             cerr << "Searching in chunk " << chunkNumber << " ...\n";
