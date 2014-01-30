@@ -1,5 +1,5 @@
 INCBASE = -I..
-FLAGS = -g -O2 -std=c++11
+FLAGS = -O2 -std=c++11
 
 searcher: main.cpp query.h searcher.o
 	g++ $(FLAGS) $(INCBASE) -o searcher main.cpp searcher.o

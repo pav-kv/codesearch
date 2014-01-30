@@ -1,5 +1,5 @@
 INCBASE = -I..
-FLAGS = -g -O2 -std=c++11
+FLAGS = -O2 -std=c++11
 
 indexer: main.cpp lister.o indexer.o
 	g++ $(FLAGS) $(INCBASE) -o indexer main.cpp lister.o indexer.o
