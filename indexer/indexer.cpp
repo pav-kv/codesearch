@@ -58,14 +58,14 @@ void TIndexer::Index(const vector<string>& files, const char* idxFile, const cha
     Chunk.Lists.resize(TRI_COUNT);
     LastDocs.resize(TRI_COUNT);
     for (TDocId i = 0; i < filesCount; ++i)
-        Index(i, files[i].c_str(), idxOutput, datOutput);
+        Index(i + 1, files[i].c_str(), idxOutput, datOutput);
     if (Chunk.Size)
         FlushChunk(idxOutput, datOutput);
 }
 
 void TIndexer::Index(TDocId docId, const char* filename, ostream& idxOutput, ostream& datOutput) {
     if (Config.Verbose)
-        cerr << "Indexing: " << filename << '\n';
+        cerr << "Indexing " << docId << ": " << filename << '\n';
     ifstream input(filename);
     vector<char> buffer(1 << 13);
     input.rdbuf()->pubsetbuf(&buffer[0], buffer.size());
