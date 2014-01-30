@@ -7,4 +7,6 @@ TODO:
   * Memory mapped index
   * Optimize index and search speed
   * Single producer - disk reader, multiple consumers - grep's
+  * Binary files filter
+  * Filename filter for indexer and for searcher
   * Distributed codesearch
