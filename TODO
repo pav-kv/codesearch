@@ -5,5 +5,6 @@ TODO:
   * Regular expressions engine
   * Extract trigrams from regular expression
   * Memory mapped index
+  * Optimize index and search speed
   * Single producer - disk reader, multiple consumers - grep's
   * Distributed codesearch
