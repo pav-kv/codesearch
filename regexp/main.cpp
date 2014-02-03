@@ -10,7 +10,8 @@ int main() {
     TFiniteAutomaton dot = TFiniteAutomaton::Elementary('.');
     TFiniteAutomaton sign = TFiniteAutomaton::Elementary('-');
 
-    TFiniteAutomaton fsm = sign.ZeroOrOne() + (dot + +nine).ZeroOrOne() + (e + sign.ZeroOrOne() + +nine).ZeroOrOne();
+    TFiniteAutomaton fsm = sign.ZeroOrOne() + +nine + (dot + +nine).ZeroOrOne() + (e + sign.ZeroOrOne() + +nine).ZeroOrOne();
+    fsm.Determine();
 
     fsm.ToGraphviz(std::cout);
 

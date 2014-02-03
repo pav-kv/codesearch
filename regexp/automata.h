@@ -19,12 +19,12 @@ namespace NCodesearch {
 class TFiniteAutomaton {
 public:
     typedef set<size_t> TStateIdSet;
-    typedef map<TChar, TStateIdSet> TTransisions;
+    typedef map<TChar, TStateIdSet> TTransitions;
 
     struct TState {
         // size_t Id;
         bool IsFinal;
-        TTransisions Transitions;
+        TTransitions Transitions;
 
         void Swap(TState& other) {
             std::swap(IsFinal, other.IsFinal);
@@ -54,8 +54,8 @@ public:
         States.resize(size);
         /*if (size < oldSize)
             for (size_t i = 0; i < size; ++i) {
-                TTransisions& tran = States[i].Transitions;
-                for (TTransisions::iterator it = tran.begin(); it != tran.end(); ++it)
+                TTransitions& tran = States[i].Transitions;
+                for (TTransitions::iterator it = tran.begin(); it != tran.end(); ++it)
                     if (tran->second >= size)
             }*/
         return oldSize;
@@ -124,6 +124,10 @@ public:
 
     TFiniteAutomaton operator + (const TFiniteAutomaton& rhs) const { TFiniteAutomaton result(*this); return result += rhs; }
     TFiniteAutomaton operator | (const TFiniteAutomaton& rhs) const { TFiniteAutomaton result(*this); return result |= rhs; }
+
+    bool EpsClosure(TStateIdSet& stateSet, vector<bool>& visited) const;  // returns true, iff resulting stateSet contains final states
+    TFiniteAutomaton Determined() const;
+    TFiniteAutomaton& Determine() { TFiniteAutomaton aut(*this); return *this = aut.Determined(); }
 
     // TODO: configure colours and shape
     void ToGraphviz(std::ostream& output, const char* graphName = DEFAULT_GRAPH_NAME) const;
