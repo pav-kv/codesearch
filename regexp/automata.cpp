@@ -1,4 +1,5 @@
 #include "automata.h"
+#include "buckets.h"
 
 #include <deque>
 #include <queue>
@@ -191,6 +192,87 @@ TFiniteAutomaton TFiniteAutomaton::Determined() const {
             result.AddTransition(state, toState, ch);
         }
     }
+
+    return result;
+}
+
+TFiniteAutomaton TFiniteAutomaton::Minimized() const {
+    // NOTE: automaton shoud be deterministic here
+
+    TFiniteAutomaton result;
+
+    vector<size_t> labels(Size());
+    vector< vector<size_t> > classes(2);
+
+    // basis: divide states into final / not final
+    for (size_t i = 0, size = Size(); i != size; ++i)
+        classes[labels[i] = static_cast<size_t>(States[i].IsFinal)].push_back(i);
+    if (classes[1].empty())
+        classes.pop_back();
+    if (classes[0].empty())
+        classes.erase(classes.begin());
+
+    // unite alphabets
+    set<TChar> charSet;
+    for (size_t i = 0, size = Size(); i != size; ++i) {
+        const TTransitions& tran = States[i].Transitions;
+        for (TTransitions::const_iterator trIt = tran.begin(), trEnd = tran.end(); trIt != trEnd; ++trIt)
+            charSet.insert(trIt->first);
+    }
+    vector<TChar> chars(charSet.begin(), charSet.end());
+    charSet.clear();
+
+    // find equivalence classes
+    bool modified = true;
+    TBucketTable<size_t> buckets(Size() + 1);
+    while (modified) {
+        vector< vector<size_t> > newClasses;
+        modified = false;
+        for (size_t i = 0, size = classes.size(); i != size; ++i) {
+            const vector<size_t>& cls = classes[i];
+            bool class_modified = false;
+            for (size_t chInd = 0, chEnd = chars.size(); chInd != chEnd; ++chInd) {
+                const TChar ch = chars[chInd];
+                buckets.Clear();
+                for (size_t j = 0, clsSize = cls.size(); j != clsSize; ++j) {
+                    const TTransitions& tran = States[cls[j]].Transitions;
+                    TTransitions::const_iterator it = tran.find(ch);
+                    size_t bucket = (it != tran.end() ? labels[*it->second.begin()] + 1 : 0);
+                    buckets.Push(cls[j], bucket);
+                }
+                if (buckets.UsedBuckets() != 1) {
+                    const TBucketTable<size_t>::TBuckets& bucks = buckets.GetBuckets();
+                    const vector<size_t>& used = buckets.GetUsedBuckets();
+                    for (size_t b = 0, usedSize = used.size(); b != usedSize; ++b)
+                        newClasses.push_back(bucks[used[b]]);
+                    class_modified = true;
+                    modified = true;
+                    break;
+                }
+            }
+            if (!class_modified)
+                newClasses.push_back(cls);
+        }
+        classes.swap(newClasses);
+        for (size_t i = 0, size = classes.size(); i != size; ++i) {
+            const vector<size_t>& cls = classes[i];
+            for (size_t j = 0, clsSize = cls.size(); j != clsSize; ++j)
+                labels[cls[j]] = i;
+        }
+    }
+
+    // construct resulting DFA using labels ang classes
+    result.Resize(classes.size());
+    for (size_t i = 0, size = classes.size(); i != size; ++i) {
+        // NOTE: it is guaranteed that classes are not empty
+        size_t state = classes[i].front();
+        const TTransitions& tran = States[state].Transitions;
+        for (TTransitions::const_iterator it = tran.begin(), end = tran.end(); it != end; ++it)
+            result.AddTransition(labels[state], labels[*it->second.begin()], it->first); // NOTE: all labels by one char are equal
+    }
+    result.SetStartState(labels[StartState]);
+    for (TStateIdSet::const_iterator it = FinalStates.begin(), end = FinalStates.end(); it != end; ++it)
+        result.SetFinalState(labels[*it]);
 
     return result;
 }

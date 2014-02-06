@@ -127,7 +127,39 @@ public:
 
     bool EpsClosure(TStateIdSet& stateSet, vector<bool>& visited) const;  // returns true, iff resulting stateSet contains final states
     TFiniteAutomaton Determined() const;
-    TFiniteAutomaton& Determine() { TFiniteAutomaton aut(*this); return *this = aut.Determined(); }
+    TFiniteAutomaton& Determine() { return *this = this->Determined(); }
+
+    TFiniteAutomaton Minimized() const;
+    TFiniteAutomaton& Minimize() { return *this = this->Minimized(); } // n log n Hopcroft
+
+    // TODO: complement - switch DFA states. if no transition -> transit to error -> error switches to final
+    // TODO: intersection = c(union(c(A), c(B)))
+    // TODO: intersection != epmty
+    // TODO: difference
+    // TODO: bool operations or fsm products
+
+    // TODO: reverse: 1. reverse arcs, fictive start -> NFA of reversal; 2. reverse regexp
+    // TODO: homomorphism - h:sigma->sigma*, build automaton
+    // TODO: inverse homomorphism - transition(a) = transition(h(a))
+
+    // TODO: L|str = {X | Xstr is in L}
+    // TODO: str|L = {X | strX is in L}
+
+    // TODO: prefix, suffix, max, min
+
+    // TODO: alternate, half
+
+    // TODO: cycle
+
+    // TODO: product - NFA, epsNFA, DFA
+
+
+    // TODO: empty - BFS or recursive regex check
+    // TODO: =sigma*
+    // TODO: contains
+    // TODO: finite
+    // TODO: word count
+    // TODO: equivalence
 
     // TODO: configure colours and shape
     void ToGraphviz(std::ostream& output, const char* graphName = DEFAULT_GRAPH_NAME) const;
