@@ -1,0 +1,11 @@
+message TNode {
+    optional string Host = 1;
+    optional uint32 Port = 2;
+}
+
+message TCluster {
+    repeated TNode Nodes = 1;
+    optional uint32 Master = 2;
+    optional uint32 Balancer = 3;
+}
+
