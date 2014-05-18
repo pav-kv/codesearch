@@ -19,6 +19,7 @@ class TSearcherConfig : public TConfigBase {
 public:
     bool Verbose;
     bool PrintLineNumbers;
+    bool ColoredOutput;
     bool JustFilter;
 
 public:

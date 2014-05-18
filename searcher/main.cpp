@@ -23,7 +23,10 @@ int main(int argc, char** argv) {
     string datPath = indexPath + ".dat";
     TSearcherConfig config;
     TSearcher searcher(config);
-    searcher.Search(idxPath.c_str(), datPath.c_str(), query, cout, argv[3]);
+    string regexp = argv[3];
+    if (regexp == "--")
+        regexp = argv[2];
+    searcher.Search(idxPath.c_str(), datPath.c_str(), query, cout, regexp.c_str());
 
     TQueryFactory::Free(query);
 

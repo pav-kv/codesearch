@@ -5,7 +5,10 @@
 #include <util/code.h>
 
 #include <iostream>
+#include <sstream>
 #include <map>
+/////
+#include <ctime>
 
 using namespace std;
 
@@ -46,6 +49,8 @@ void TSearcher::Search(const char* idxFile, const char* datFile, TSearchQuery qu
     Decoder = CreateEncoder(static_cast<ECompression>(compression));
     idxInput.seekg(filesCount * sizeof(TOffset), ios_base::cur);
 
+    clock_t timeBegin = clock();
+
     TPostingList result;
     uint32_t chunkNumber;
     TDocId lastDoc = 1;
@@ -70,6 +75,9 @@ void TSearcher::Search(const char* idxFile, const char* datFile, TSearchQuery qu
 
     TRegexParser parser(pattern); // TODO: check compilation
 
+    clock_t timeEnd = clock();
+    cerr << "DocId time: " << double(timeEnd - timeBegin) / CLOCKS_PER_SEC << '\n';
+
     if (!result.empty())
         ++result[0];
     idxInput.seekg(sizeof(uint32_t) + sizeof(TDocId));
@@ -90,6 +98,9 @@ void TSearcher::Search(const char* idxFile, const char* datFile, TSearchQuery qu
     }
 
     delete Decoder;
+
+    timeEnd = clock();
+    cerr << "Response time: " << double(timeEnd - timeBegin) / CLOCKS_PER_SEC << '\n';
 }
 
 void TSearcher::BindChunkToQuery(ifstream& idxInput, ifstream& datInput, TQueryTreeNode* node) {
@@ -130,7 +141,7 @@ void TSearcher::GrepFile(const char* filename, TRegexParser& parser, ostream& ou
     if (Config.Verbose)
         cerr << "Searching in file " << filename << "\n";
     ifstream input(filename);
-    vector<char> buffer(1 << 13); // TODO: const
+    vector<char> buffer(1 << 13); // TODO: const BUFFER_SIZSE = 1 << 13
     input.rdbuf()->pubsetbuf(&buffer[0], buffer.size());
     string line;
     size_t lineNumber = 0;
@@ -138,9 +149,25 @@ void TSearcher::GrepFile(const char* filename, TRegexParser& parser, ostream& ou
         ++lineNumber;
         if (!parser.Match(line.c_str()))
             continue;
-        output << filename << ':';
+        if (Config.ColoredOutput) {
+            std::ostringstream oss;
+            oss << "\033[0;36m" << filename;
+            oss << "\033[0m";
+            oss << ':';
+            output << oss.str();
+        } else {
+            output << filename << ':';
+        }
         if (Config.PrintLineNumbers)
-            output << lineNumber << ':';
+            if (Config.ColoredOutput) {
+                std::ostringstream oss;
+                oss << "\033[0;32m" << lineNumber;
+                oss << "\033[0m";
+                oss << ':';
+                output << oss.str();
+            } else {
+                output << lineNumber << ':';
+            }
         output << line << '\n';
     }
 }
@@ -151,6 +178,7 @@ void TSearcher::GrepFile(const char* filename, TRegexParser& parser, ostream& ou
 void TSearcherConfig::SetDefault() {
     Verbose = false;
     PrintLineNumbers = true;
+    ColoredOutput = true;
     JustFilter = false;
 }
 
@@ -158,6 +186,7 @@ void TSearcherConfig::Print(ostream& output) const {
     char buffer[64];
     OUTPUT_CONFIG_VALUE(Verbose, "%d");
     OUTPUT_CONFIG_VALUE(PrintLineNumbers, "%d");
+    OUTPUT_CONFIG_VALUE(ColoredOutput, "%d");
     OUTPUT_CONFIG_VALUE(JustFilter, "%d");
 }
 
