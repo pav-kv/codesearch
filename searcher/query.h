@@ -3,8 +3,6 @@
 #include <base/types.h>
 #include <algorithm>
 
-using std::min;
-
 namespace NCodesearch {
 
 enum EQueryNodeType {
@@ -129,7 +127,7 @@ private:
     virtual TDocId DoPeek() {
         TDocId left = Left->Peek();
         TDocId right = Right->Peek();
-        return min(left, right);
+        return std::min(left, right);
     }
 
     virtual TDocId DoNext() {
