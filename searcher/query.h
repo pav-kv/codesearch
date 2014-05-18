@@ -7,10 +7,12 @@ using std::min;
 
 namespace NCodesearch {
 
-const int NODE_UNKNOWN = 0;
-const int NODE_OR      = 1;
-const int NODE_AND     = 2;
-const int NODE_TERM    = 3;
+enum EQueryNodeType {
+    NODE_UNKNOWN = 0,
+    NODE_OR      = 1,
+    NODE_AND     = 2,
+    NODE_TERM    = 3
+};
 
 const TDocId DOCS_END  = static_cast<TDocId>(-1);
 
@@ -18,14 +20,14 @@ class TQueryFactory;
 
 class TQueryTreeNode {
 public:
-    const int Tag;
+    const EQueryNodeType Type;
 
     TQueryTreeNode* Left;
     TQueryTreeNode* Right;
 
 public:
-    TQueryTreeNode(int tag = NODE_UNKNOWN, TQueryTreeNode* left = NULL, TQueryTreeNode* right = NULL)
-        : Tag(tag)
+    TQueryTreeNode(EQueryNodeType type = NODE_UNKNOWN, TQueryTreeNode* left = NULL, TQueryTreeNode* right = NULL)
+        : Type(type)
         , Left(left)
         , Right(right)
         , Cache(DOCS_END)
@@ -157,7 +159,7 @@ public:
     static void Print(const TQueryTreeNode* node, ostream& output, int depth = 0) {
         for (int i = 0; i < depth; ++i)
             output << ' ';
-        switch (node->Tag) {
+        switch (node->Type) {
         case NODE_OR:
             output << "OR\n";
             Print(node->Left, output, depth + 2);
