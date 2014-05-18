@@ -1,6 +1,7 @@
 #pragma once
 
 #include <base/types.h>
+
 #include <algorithm>
 
 namespace NCodesearch {
@@ -12,9 +13,7 @@ enum EQueryNodeType {
     NODE_TERM    = 3
 };
 
-const TDocId DOCS_END  = static_cast<TDocId>(-1);
-
-class TQueryFactory;
+const TDocId DOCS_END = static_cast<TDocId>(-1);
 
 class TQueryTreeNode {
 public:
@@ -41,7 +40,7 @@ public:
     }
 
     TDocId Peek() {
-        return DoPeek();
+        return DoPeek(); // FIXME: WTF is this?
         if (!UpToDate) {
             Cache = DoPeek();
             UpToDate = true;
