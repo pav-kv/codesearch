@@ -1,6 +1,7 @@
 #include "indexer.h"
 #include "lister.h"
 
+#include <algorithm>
 #include <iostream>
 using std::cout;
 
@@ -17,6 +18,7 @@ int main(int argc, char** argv) {
     TLister lister(listerConfig);
     vector<string> docs;
     lister.List(string(argv[1]), docs);
+    std::sort(docs.begin(), docs.end());
 
     TIndexerConfig indexerConfig;
     indexerConfig.Verbose = true;
