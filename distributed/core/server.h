@@ -1,0 +1,71 @@
+#pragma once
+
+#include "searcher.h"
+#include <searcher/query.h>
+
+#include <sstream>
+#include <unistd.h>
+#include <zmq.hpp>
+
+#include <distributed/proto/protocol.pb.h>
+
+namespace NCodesearch {
+
+class TCoreServer {
+public:
+    TCoreServer(TSearcher& searcher, uint16_t port = 6731)
+        : Searcher(searcher)
+        , ZmqContext(1)
+        , ZmqSocket(ZmqContext, ZMQ_REP)
+    {
+        char addr[32];
+        snprintf(addr, 32, "tcp://localhost:%d", port);
+        ZmqSocket.connect(addr);
+    }
+
+    void Start() {
+        while (true) {
+            zmq::message_t request;
+            ZmqSocket.recv(&request);
+            HandleRequest(request);
+        }
+    }
+
+private:
+    void HandleRequest(const zmq::message_t& request) {
+        NProtocol::TSearchRequest req;
+        std::string data((const char*)request.data(), request.size());
+        req.ParseFromString(data);
+        string queryStr = req.filter();
+        string regexp = req.regexp();
+
+        if (queryStr == "--")
+            queryStr = regexp;
+        std::cout << "Got request: " << queryStr << " ||| " << regexp << "\n";
+
+        TQueryTreeNode* query = TQueryFactory::Parse(queryStr.c_str());
+        if (!query) {
+            cout << "Query compilation error!\n";
+            return;
+        }
+        std::ostringstream output;
+        TSearchConfig config;
+        config.MaxFileSize = req.maxfilesize();
+        Searcher.Search(query, config, output, regexp.c_str());
+        TQueryFactory::Free(query); // TODO: Smart pointer with overrided delete.
+
+        const string& result = output.str();
+        zmq::message_t reply(result.size());
+        memcpy((void *)reply.data(), result.data(), result.size());
+        ZmqSocket.send(reply);
+    }
+
+private:
+    TSearcher& Searcher;
+
+    zmq::context_t ZmqContext;
+    zmq::socket_t ZmqSocket;
+};
+
+} // NCodesearch
+

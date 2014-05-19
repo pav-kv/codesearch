@@ -1,0 +1,8 @@
+package NCodesearch.NProtocol;
+
+message TSearchRequest {
+    optional string RegExp = 1;
+    optional string Filter = 2;
+    optional uint64 MaxFileSize = 3 [default = 2097152]; // 2 Mb
+}
+

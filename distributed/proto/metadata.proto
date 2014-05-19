@@ -1,3 +1,5 @@
+package NCodesearch.NMeta;
+
 message TNode {
     optional string Host = 1;
     optional uint32 Port = 2;
