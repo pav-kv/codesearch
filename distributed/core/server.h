@@ -1,5 +1,6 @@
 #pragma once
 
+#include "indexer.h"
 #include "searcher.h"
 #include <searcher/query.h>
 
@@ -13,8 +14,8 @@ namespace NCodesearch {
 
 class TCoreServer {
 public:
-    TCoreServer(TSearcher& searcher, const char* proxyHost, uint16_t port = 6731)
-        : Searcher(searcher)
+    TCoreServer(TIndexer& indexer, const char* proxyHost, uint16_t port = 6731)
+        : Indexer(indexer)
         , ZmqContext(1)
         , ZmqSocket(ZmqContext, ZMQ_REP)
     {
@@ -51,7 +52,8 @@ private:
         std::ostringstream output;
         TSearchConfig config;
         config.MaxFileSize = req.maxfilesize();
-        Searcher.Search(query, config, output, regexp.c_str());
+        std::shared_ptr<TSearcher> searcher = Indexer.GetSearcher();
+        searcher->Search(query, config, output, regexp.c_str());
         TQueryFactory::Free(query); // TODO: Smart pointer with overrided delete.
 
         const string& result = output.str();
@@ -61,7 +63,7 @@ private:
     }
 
 private:
-    TSearcher& Searcher;
+    TIndexer& Indexer;
 
     zmq::context_t ZmqContext;
     zmq::socket_t ZmqSocket;

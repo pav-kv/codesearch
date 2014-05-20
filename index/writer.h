@@ -42,6 +42,13 @@ struct TIndexChunk {
         , LastDocs(lists)
     { /* no-op */ }
 
+    void Reset(size_t lists = 0) {
+        Number = 0;
+        Size = 0;
+        Lists.resize(lists);
+        LastDocs.resize(lists);
+    }
+
     void Add(TTrigram trigram, TDocId docId) {
         Lists[trigram].push_back(docId);
         ++Size;

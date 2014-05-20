@@ -39,6 +39,9 @@ TIndexWriter::~TIndexWriter() {
 }
 
 void TIndexWriter::Index(const vector<string>& files, const char* idxFile, const char* datFile) {
+    DataOffset = 0;
+    Chunk.Reset(TRI_COUNT);
+
     ofstream idxOutput(idxFile);
     ofstream datOutput(datFile);
     vector<char> idxBuffer(1 << 13);

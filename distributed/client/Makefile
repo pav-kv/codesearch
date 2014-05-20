@@ -1,8 +1,8 @@
 INCBASE = -I../..
 FLAGS = -O2 -std=c++11
 
-client: main.cpp
-	g++ $(FLAGS) $(INCBASE) -o client main.cpp ../proto/protocol.pb.o -lzmq -lprotobuf
+csclient: main.cpp
+	g++ $(FLAGS) $(INCBASE) -o csclient main.cpp ../proto/protocol.pb.o -lzmq -lprotobuf
 
 clear:
 	rm *.o

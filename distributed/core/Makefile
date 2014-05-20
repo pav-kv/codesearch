@@ -1,17 +1,14 @@
 INCBASE = -I../..
 FLAGS = -O2 -std=c++11
 
-all: searcher proxy
+all: cscore csproxy
 
-proxy: proxy.cpp
-	g++ $(FLAGS) $(INCBASE) -o proxy proxy.cpp -lzmq
+csproxy: proxy.cpp
+	g++ $(FLAGS) $(INCBASE) -o csproxy proxy.cpp -lzmq
 
-searcher: main.cpp searcher.o
-	g++ $(FLAGS) $(INCBASE) -o searcher main.cpp searcher.o ../proto/protocol.pb.o -lzmq -lprotobuf
+cscore: indexer.h main.cpp searcher.cpp searcher.h server.h
+	g++ $(FLAGS) $(INCBASE) -o cscore main.cpp searcher.cpp ../../index/writer.o ../../indexer/lister.o ../proto/protocol.pb.o -lzmq -lprotobuf -lboost_filesystem
 
-searcher.o: searcher.h searcher.cpp
-	g++ $(FLAGS) $(INCBASE) -c searcher.cpp
-
-clear:
+clean:
 	rm *.o
 

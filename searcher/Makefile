@@ -7,6 +7,6 @@ searcher: main.cpp query.h searcher.o
 searcher.o: searcher.h searcher.cpp
 	g++ $(FLAGS) $(INCBASE) -c searcher.cpp
 
-clear:
+clean:
 	rm *.o
 

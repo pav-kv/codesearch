@@ -104,7 +104,7 @@ void TSearcher::Search(const char* idxFile, const char* datFile, TSearchQuery qu
 }
 
 void TSearcher::BindChunkToQuery(ifstream& idxInput, ifstream& datInput, TQueryTreeNode* node) {
-    if (node->Tag != NODE_TERM) {
+    if (node->Type != NODE_TERM) {
         BindChunkToQuery(idxInput, datInput, node->Left);
         BindChunkToQuery(idxInput, datInput, node->Right);
         return;

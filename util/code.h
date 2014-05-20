@@ -9,7 +9,7 @@ using namespace std;
 
 namespace NCodesearch {
 
-int Log2(TDocId x) {
+inline int Log2(TDocId x) {
     int result = 0;
     if (x & 0xFFFF0000) {
         result += 16;
@@ -199,7 +199,7 @@ public:
     }
 };
 
-TEncoder* CreateEncoder(ECompression compressionMethod) {
+inline TEncoder* CreateEncoder(ECompression compressionMethod) {
     switch (compressionMethod) {
     case C_NONE:
         return new TSimpleEncoder();
