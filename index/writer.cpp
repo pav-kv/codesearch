@@ -1,4 +1,4 @@
-#include "indexer.h"
+#include "writer.h"
 
 #include <base/types.h>
 #include <util/code.h>
@@ -18,12 +18,12 @@ inline void Write(ostream& output, T value/*, size_t& written*/) {
 namespace NCodesearch {
 
 ////////////////////////////////////////////////////////////////
-// TIndexer
+// TIndexWriter
 
-TIndexer::TIndexer(const TIndexerConfig& config)
+TIndexWriter::TIndexWriter(const TIndexWriterConfig& config)
     : Config(config)
-    , Offset(0)
-    , ChunkNumber(0)
+    , Chunk(TRI_COUNT)
+    , DataOffset(0)
 {
     if (Config.Verbose) {
         cerr << "Indexer config:\n";
@@ -33,11 +33,12 @@ TIndexer::TIndexer(const TIndexerConfig& config)
     Encoder = CreateEncoder(Config.CompressionMethod);
 }
 
-TIndexer::~TIndexer() {
-    if (Encoder) delete Encoder;
+TIndexWriter::~TIndexWriter() {
+    if (Encoder)
+        delete Encoder;
 }
 
-void TIndexer::Index(const vector<string>& files, const char* idxFile, const char* datFile) {
+void TIndexWriter::Index(const vector<string>& files, const char* idxFile, const char* datFile) {
     ofstream idxOutput(idxFile);
     ofstream datOutput(datFile);
     vector<char> idxBuffer(1 << 13);
@@ -48,22 +49,20 @@ void TIndexer::Index(const vector<string>& files, const char* idxFile, const cha
     TDocId filesCount = files.size();
     Write(idxOutput, static_cast<uint32_t>(Config.CompressionMethod));
     Write(idxOutput, filesCount);
-    for (TDocId i = 0; i < filesCount; ++i) {
-        Write(idxOutput, Offset);
+    for (TDocId i = 0; i != filesCount; ++i) {
+        Write(idxOutput, DataOffset);
         Write(datOutput, static_cast<TOffset>(files[i].size()));
         datOutput << files[i];
-        Offset += sizeof(TOffset) + files[i].size();
+        DataOffset += sizeof(TOffset) + files[i].size();
     }
 
-    Chunk.Lists.resize(TRI_COUNT);
-    LastDocs.resize(TRI_COUNT);
-    for (TDocId i = 0; i < filesCount; ++i)
+    for (TDocId i = 0; i != filesCount; ++i)
         Index(i + 1, files[i].c_str(), idxOutput, datOutput);
     if (Chunk.Size)
         FlushChunk(idxOutput, datOutput);
 }
 
-void TIndexer::Index(TDocId docId, const char* filename, ostream& idxOutput, ostream& datOutput) {
+void TIndexWriter::Index(TDocId docId, const char* filename, ostream& idxOutput, ostream& datOutput) {
     if (Config.Verbose)
         cerr << "Indexing " << docId << ": " << filename << '\n';
     ifstream input(filename);
@@ -88,39 +87,38 @@ void TIndexer::Index(TDocId docId, const char* filename, ostream& idxOutput, ost
         FlushChunk(idxOutput, datOutput);
 }
 
-void TIndexer::FlushChunk(ostream& idxOutput, ostream& datOutput) {
+void TIndexWriter::FlushChunk(ostream& idxOutput, ostream& datOutput) {
     if (Config.Verbose)
-        cerr << "Flush: " << Chunk.Size << '\n';
-    Write(idxOutput, ChunkNumber);
-    for (TTrigram tri = 0; tri < Chunk.Lists.size(); ++tri) {
-        Write(idxOutput, Offset);
+        cerr << "Flush chunk [size = " << Chunk.Size << "]\n";
+    Write(idxOutput, Chunk.Number++);
+    for (TTrigram tri = 0, last = Chunk.Lists.size(); tri != last; ++tri) {
+        Write(idxOutput, DataOffset);
         TPostingList& list = Chunk.Lists[tri];
         if (list.empty())
             continue;
         TDocId lastDoc = list.back();
         for (size_t i = list.size() - 1; i; --i)
             list[i] -= list[i - 1];
-        list[0] -= LastDocs[tri];
-        LastDocs[tri] = lastDoc;
-        Offset += Encoder->Encode(datOutput, list);
+        list[0] -= Chunk.LastDocs[tri];
+        Chunk.LastDocs[tri] = lastDoc;
+        DataOffset += Encoder->Encode(datOutput, list);
         list.clear();
         list.shrink_to_fit();
     }
-    Write(idxOutput, Offset);
+    Write(idxOutput, DataOffset);
     Chunk.Size = 0;
-    ++ChunkNumber;
 }
 
 ////////////////////////////////////////////////////////////////
-// TIndexerConfig
+// TIndexWriterConfig
 
-void TIndexerConfig::SetDefault() {
+void TIndexWriterConfig::SetDefault() {
     Verbose = false;
     ChunkSize = 1 << 27;
     CompressionMethod = C_ELIAS_DELTA;
 }
 
-void TIndexerConfig::Print(ostream& output) const {
+void TIndexWriterConfig::Print(ostream& output) const {
     char buffer[64];
     OUTPUT_CONFIG_VALUE(Verbose, "%d");
     OUTPUT_CONFIG_VALUE(ChunkSize, "%lu");

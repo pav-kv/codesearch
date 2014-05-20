@@ -13,7 +13,7 @@ namespace NCodesearch {
 
 class TEncoder;
 
-class TIndexerConfig : public TConfigBase {
+class TIndexWriterConfig : public TConfigBase {
 public:
     bool Verbose;
 
@@ -21,7 +21,7 @@ public:
     ECompression CompressionMethod;
 
 public:
-    TIndexerConfig() {
+    TIndexWriterConfig() {
         SetDefault();
     }
 
@@ -30,13 +30,17 @@ public:
 };
 
 struct TIndexChunk {
+    uint32_t Number;
     size_t Size;
     vector<TPostingList> Lists;
+    vector<TDocId> LastDocs;
 
-    TIndexChunk()
-        : Size(0)
-    {
-    }
+    TIndexChunk(size_t lists = 0)
+        : Number(0)
+        , Size(0)
+        , Lists(lists)
+        , LastDocs(lists)
+    { /* no-op */ }
 
     void Add(TTrigram trigram, TDocId docId) {
         Lists[trigram].push_back(docId);
@@ -44,10 +48,10 @@ struct TIndexChunk {
     }
 };
 
-class TIndexer {
+class TIndexWriter {
 public:
-    TIndexer(const TIndexerConfig& config);
-    ~TIndexer();
+    TIndexWriter(const TIndexWriterConfig& config);
+    ~TIndexWriter();
     void Index(const vector<string>& files, const char* idxFile, const char* datFile);
 
 private:
@@ -55,12 +59,10 @@ private:
     void FlushChunk(ostream& idxOutput, ostream& datOutput);
 
 private:
-    TIndexerConfig Config;
+    TIndexWriterConfig Config;
     TIndexChunk Chunk;
-    TOffset Offset;
+    TOffset DataOffset;
     TEncoder* Encoder;
-    vector<TDocId> LastDocs;
-    uint32_t ChunkNumber;
 };
 
 } // NCodesearch

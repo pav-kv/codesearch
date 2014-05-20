@@ -1,9 +1,9 @@
-#include "indexer.h"
 #include "lister.h"
+
+#include <index/writer.h>
 
 #include <algorithm>
 #include <iostream>
-using std::cout;
 
 using namespace NCodesearch;
 
@@ -20,14 +20,14 @@ int main(int argc, char** argv) {
     lister.List(string(argv[1]), docs);
     std::sort(docs.begin(), docs.end());
 
-    TIndexerConfig indexerConfig;
-    indexerConfig.Verbose = true;
-    TIndexer indexer(indexerConfig);
+    TIndexWriterConfig writerConfig;
+    writerConfig.Verbose = true;
+    TIndexWriter writer(writerConfig);
 
     string indexPath = argv[2];
     string idxPath = indexPath + ".idx";
     string datPath = indexPath + ".dat";
-    indexer.Index(docs, idxPath.c_str(), datPath.c_str());
+    writer.Index(docs, idxPath.c_str(), datPath.c_str());
 
     return 0;
 }
