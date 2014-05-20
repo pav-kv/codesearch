@@ -13,13 +13,13 @@ namespace NCodesearch {
 
 class TCoreServer {
 public:
-    TCoreServer(TSearcher& searcher, uint16_t port = 6731)
+    TCoreServer(TSearcher& searcher, const char* proxyHost, uint16_t port = 6731)
         : Searcher(searcher)
         , ZmqContext(1)
         , ZmqSocket(ZmqContext, ZMQ_REP)
     {
         char addr[32];
-        snprintf(addr, 32, "tcp://localhost:%d", port);
+        snprintf(addr, 32, "tcp://%s:%d", proxyHost, port);
         ZmqSocket.connect(addr);
     }
 
