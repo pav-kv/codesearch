@@ -1,7 +1,10 @@
 TODO:
+  * Web-interface
+  * Colored output
   * Store absolute paths in index
   * Timers in verbose mode
-  * Program option parser, fully configurable binaries
+  * Make different levels of verbosity
+  * Program option parser, autocomplete, fully configurable binaries
   * Regular expressions engine
   * Extract trigrams from regular expression
   * Memory mapped index
@@ -10,3 +13,6 @@ TODO:
   * Binary files filter
   * Filename filter for indexer and for searcher
   * Distributed codesearch
+  * Add logging
+  * Use inotify to watch filesystem events (reindexing)
+
