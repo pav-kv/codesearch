@@ -1,4 +1,4 @@
-#include "../proto/protocol.pb.h"
+#include <distributed/proto/protocol.pb.h>
 using namespace NCodesearch::NProtocol;
 
 #include <iostream>

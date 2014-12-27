@@ -11,7 +11,9 @@ include_directories("${PROJECT_BINARY_DIR}")
 
 file (MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 
-# TODO: make include
+########### Macros ###########
+# TODO: make include file
+
 macro (LINK_TARGET targetName linkPath)
     get_target_property (targetPath ${targetName} LOCATION)
     add_custom_command (
@@ -20,6 +22,15 @@ macro (LINK_TARGET targetName linkPath)
         COMMENT "Making a symbolic link ${linkPath} -> ${targetPath}."
     )
 endmacro (LINK_TARGET)
+
+macro (COMPILE_PROTOBUF protoFile)
+    add_custom_command (
+        OUTPUT ${protoFile}.pb.h ${protoFile}.pb.cc
+        COMMAND protoc -I${CMAKE_CURRENT_SOURCE_DIR} --cpp_out=. ${CMAKE_CURRENT_SOURCE_DIR}/${protoFile}.proto
+    )
+endmacro (COMPILE_PROTOBUF)
+
+##############################
 
 add_compile_options ( -O2 -std=c++11 )
 
