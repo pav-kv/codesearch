@@ -2,9 +2,6 @@
 #include <vector>
 
 template <typename TChar>
-class TFixedSetBuilder;
-
-template <typename TChar>
 class TFixedSet {
 public:
     typedef std::pair<TChar, TChar> TRange;
@@ -26,17 +23,17 @@ public:
     }
 
     bool Contains(TChar ch) const {
-        if (Ranges.empty())
+        if (Ranges.empty() || ch < Ranges.front().first)
             return !Negation;
         size_t left = 0, right = Ranges.size();
         while (left + 1 < right) {
             size_t median = left + ((right - left) >> 1);
-            if (Ranges[median].first <= ch)
+            if (ch >= Ranges[median].first)
                 left = median;
             else
                 right = median;
         }
-        return (ch < Ranges[left].second && ch >= Ranges[left].first) != Negation;
+        return (ch < Ranges[left].second) != Negation;
     }
 
     TSelf Intersect(const TSelf& rhs) const {
@@ -48,7 +45,7 @@ public:
         } else {
             if (rhs.Negation) {
             } else {
-                return TSelf(Intersect(Ranges, rhs.Ranges), false);
+                return TSelf(Intersection(Ranges, rhs.Ranges), false);
             }
         }
     }
@@ -56,7 +53,7 @@ public:
     TSelf Union(const TSelf& rhs) const {
         if (Negation) {
             if (rhs.Negation) {
-                return TSelf(Intersect(Ranges, rhs.Ranges), true);
+                return TSelf(Intersection(Ranges, rhs.Ranges), true);
             } else {
             }
         } else {
@@ -75,34 +72,9 @@ public:
     }
 
 private:
-    static TRanges Intersect(const TRanges& lhs, const TRanges& rhs) {
-        TRanges result;
-        for (size_t i = 0, j = 0, lSize = lhs.size(), rSize = rhs.size(); i < lSize; ++i) {
-            for (; j < rSize && rhs[j].second <= lhs[i].first; ++j) /* no-op */;
-            for (; j < rSize && rhs[j].first < lhs[i].second; ++j)
-                result.push_back(TRange(std::max(lhs[i].first, rhs[j].first), std::min(lhs[i].second, rhs[j].second)));
-        }
-        return result;
-    }
-
-    static TRanges Union(const TRanges& lhs, const TRanges& rhs) {
-        TFixedSetBuilder<TChar> builder;
-        for (size_t i = 0, size = lhs.size(); i < size; ++i)
-            builder.AddRange(lhs[i].first, lhs[i].second);
-        for (size_t i = 0, size = rhs.size(); i < size; ++i)
-            builder.AddRange(rhs[i].first, rhs[i].second);
-        return builder.GetFixedSet().GetRanges();
-    }
-
-    static TRanges Subtract(const TRanges& lhs, const TRanges& rhs) {
-        TRanges result;
-        /*for (size_t i = 0, j = 0, lSize = Ranges.size(), rSize = rhs.size(); i < lSize; ++i) {
-            for (; j < rSize && rhs[j].second <= Ranges[i].first; ++j) * no-op *;
-            for (; j < rSize && rhs[j].first < Ranges[i].second; ++j)
-                result.push_back(TRange(std::max(Ranges[i].first, rhs[j].first), std::min(Ranges[i].second, rhs[j].second)));
-        }*/
-        return result;
-    }
+    static TRanges Intersection(const TRanges& lhs, const TRanges& rhs);
+    static TRanges Union(const TRanges& lhs, const TRanges& rhs);
+    static TRanges Difference(const TRanges& lhs, const TRanges& rhs);
 
 private:
     // TODO: counted ptr on vector
@@ -161,3 +133,39 @@ private:
     bool Negation;
 };
 
+
+template <typename TChar>
+typename TFixedSet<TChar>::TRanges TFixedSet<TChar>::Intersection(const TRanges& lhs, const TRanges& rhs) {
+    TRanges result;
+    for (size_t i = 0, j = 0, lSize = lhs.size(), rSize = rhs.size(); i < lSize && j < rSize; ++i) {
+        while (j < rSize && rhs[j].second <= lhs[i].first)
+            ++j;
+        for (; j < rSize && rhs[j].first < lhs[i].second; ++j)
+            result.push_back(TRange(std::max(lhs[i].first, rhs[j].first), std::min(lhs[i].second, rhs[j].second)));
+    }
+    return result;
+}
+
+template <typename TChar>
+typename TFixedSet<TChar>::TRanges TFixedSet<TChar>::Union(const TRanges& lhs, const TRanges& rhs) {
+    TRanges result;
+    /*for (size_t i = 0, j = 0, lSize = lhs.size(), rSize = rhs.size(); i < lSize || j < rSize; ++i) {
+        while (j < rSize && rhs[j].second <= lhs[i].first)
+            ++j;
+        for (; j < rSize && rhs[j].first < lhs[i].second; ++j)
+            result.push_back(TRange(std::max(lhs[i].first, rhs[j].first), std::min(lhs[i].second, rhs[j].second)));
+    }*/
+    return result;
+}
+
+
+template <typename TChar>
+typename TFixedSet<TChar>::TRanges TFixedSet<TChar>::Difference(const TRanges& lhs, const TRanges& rhs) {
+    TRanges result;
+    /*for (size_t i = 0, j = 0, lSize = Ranges.size(), rSize = rhs.size(); i < lSize; ++i) {
+        for (; j < rSize && rhs[j].second <= Ranges[i].first; ++j) * no-op *;
+        for (; j < rSize && rhs[j].first < Ranges[i].second; ++j)
+            result.push_back(TRange(std::max(Ranges[i].first, rhs[j].first), std::min(Ranges[i].second, rhs[j].second)));
+    }*/
+    return result;
+}
