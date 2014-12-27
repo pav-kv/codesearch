@@ -9,6 +9,8 @@ set (codesearch_VERSION_MINOR 5)
 include_directories("${PROJECT_SOURCE_DIR}")
 include_directories("${PROJECT_BINARY_DIR}")
 
+file (MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
+
 add_compile_options ( -O2 -std=c++11 )
 
 add_subdirectory ( distributed )
