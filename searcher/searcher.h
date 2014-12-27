@@ -1,7 +1,7 @@
 #pragma once
 
 #include <base/config.h>
-#include <indexer/indexer.h>
+#include <util/code.h>
 #include <util/regex.h>
 
 #include <fstream>
