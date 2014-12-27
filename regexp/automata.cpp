@@ -277,6 +277,33 @@ TFiniteAutomaton TFiniteAutomaton::Minimized() const {
     return result;
 }
 
+bool TFiniteAutomaton::IsEmpty() const {
+    // TODO: also check emptyness recursively by regex
+    std::queue<size_t> que;
+    que.push(StartState);
+    vector<bool> visited(Size());
+    visited[StartState] = true;
+    while (!que.empty()) {
+        const TState& state = States[que.front()];
+        if (state.IsFinal)
+            return false;
+        que.pop();
+        const TTransitions& tran = state.Transitions;
+        for (TTransitions::const_iterator trIt = tran.begin(), trEnd = tran.end(); trIt != trEnd; ++trIt) {
+            const TStateIdSet& to = trIt->second;
+            for (TStateIdSet::const_iterator stIt = to.begin(), stEnd = to.end(); stIt != stEnd; ++stIt) {
+                const size_t st = *stIt;
+                if (!visited[st]) {
+                    visited[st] = true;
+                    que.push(st);
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
 void TFiniteAutomaton::ToGraphviz(std::ostream& output, const char* graphName) const {
     output
         << "digraph " << graphName << " {\n"

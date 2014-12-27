@@ -153,8 +153,8 @@ public:
 
     // TODO: product - NFA, epsNFA, DFA
 
+    bool IsEmpty() const;
 
-    // TODO: empty - BFS or recursive regex check
     // TODO: =sigma*
     // TODO: contains
     // TODO: finite

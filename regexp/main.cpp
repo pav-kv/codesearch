@@ -33,6 +33,12 @@ int main(int argc, char** argv) {
     if (minimize)
         fsm.Minimize();
 
+    std::cerr << "Empty? " << fsm.IsEmpty() << '\n';
+    TFiniteAutomaton empty(2);
+    empty.AddTransition(0, 1);
+    std::cerr << "Empty? " << empty.IsEmpty() << '\n';
+
+    fsm.Enumerate();
     fsm.ToGraphviz(std::cout);
 
     return 0;
