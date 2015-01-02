@@ -62,8 +62,6 @@ void TProgramOptions::PrintUsage(std::ostream& output, IConfig* config,
 }
 
 bool TProgramOptions::Parse(IConfig* config) {
-    std::string appName(argv[0]);
-
     po::options_description opts("General options");
     opts.add_options()("help,?", "show help message");
     po::positional_options_description posOpts;
@@ -73,7 +71,7 @@ bool TProgramOptions::Parse(IConfig* config) {
     try {
         po::store(po::command_line_parser(argc, argv).options(opts).positional(posOpts).run(), varMap);
         if (varMap.count("help")) {
-            std::cout << appName << '\n' << config->GetProgramDescription() << '\n';
+            std::cout << config->GetProgramDescription() << '\n';
             PrintUsage(std::cout, config, opts, posOpts);
             return false;
         }
