@@ -1,18 +1,13 @@
 #include "writer.h"
 
-#include <base/types.h>
 #include <util/code.h>
 
 #include <fstream>
-#include <iostream>
-#include <vector>
-
-using namespace std;
+#include <memory.h>
 
 template <typename T>
-inline void Write(ostream& output, T value/*, size_t& written*/) {
+inline void Write(ostream& output, T value) {
     output.write(reinterpret_cast<const char*>(&value), sizeof(T));
-    //written += sizeof(T);
 }
 
 namespace NCodesearch {
@@ -73,7 +68,7 @@ void TIndexWriter::Index(TDocId docId, const char* filename, ostream& idxOutput,
     input.rdbuf()->pubsetbuf(&buffer[0], buffer.size());
 
     char chars[4];
-    chars[4] = 0;
+    memset(chars, 0, sizeof(chars));
     if (!input.get(chars[0]) || !input.get(chars[1]))
         return;
     vector<bool> used(TRI_COUNT);

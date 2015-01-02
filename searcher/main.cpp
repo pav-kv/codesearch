@@ -1,7 +1,6 @@
-#include "searcher.h"
-#include "query.h"
-
 #include <base/types.h>
+#include <core/search/searcher.h>
+#include <core/query.h>
 #include <util/program_options.h>
 
 #include <fstream>

@@ -7,9 +7,11 @@
 #include <string>
 #include <vector>
 
-using namespace std;
-
 namespace NCodesearch {
+
+using std::ostream;
+using std::string;
+using std::vector;
 
 class TEncoder;
 

@@ -1,10 +1,10 @@
 #include "searcher.h"
-#include "query.h"
 
+#include <core/query.h>
 #include <util/bit.h>
 #include <util/code.h>
+#include <util/regex.h>
 
-#include <iostream>
 #include <sstream>
 #include <map>
 /////

@@ -2,7 +2,7 @@
 
 #include "indexer.h"
 #include "searcher.h"
-#include <searcher/query.h>
+#include <core/query.h>
 
 #include <sstream>
 #include <unistd.h>

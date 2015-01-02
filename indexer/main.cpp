@@ -1,6 +1,5 @@
-#include "lister.h"
-
-#include <index/writer.h>
+#include <core/index/writer.h>
+#include <util/lister.h>
 #include <util/program_options.h>
 
 #include <algorithm>

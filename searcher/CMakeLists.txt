@@ -1,6 +1,6 @@
 
-add_library (searcherlib OBJECT searcher.h searcher.cpp)
-add_executable (searcher main.cpp query.h $<TARGET_OBJECTS:searcherlib>)
+add_executable (searcher main.cpp) # TODO: add query.h
+target_link_libraries (searcher core-search-searcher)
 target_link_libraries (searcher -lboost_program_options)
 
 LINK_TARGET(searcher ${CMAKE_CURRENT_SOURCE_DIR}/searcher)

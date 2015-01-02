@@ -1,7 +1,7 @@
 #include "searcher.h"
 
 #include <base/types.h>
-#include <searcher/query.h>
+#include <core/query.h>
 #include <util/code.h>
 #include <util/regex.h>
 

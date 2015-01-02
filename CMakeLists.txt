@@ -34,8 +34,9 @@ endmacro (COMPILE_PROTOBUF)
 
 add_compile_options ( -O2 -std=c++11 )
 
+add_subdirectory ( core        )
 add_subdirectory ( distributed )
-add_subdirectory ( index       )
 add_subdirectory ( indexer     )
 add_subdirectory ( searcher    )
+add_subdirectory ( util        )
  

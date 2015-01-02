@@ -1,19 +1,20 @@
 #pragma once
 
 #include <base/config.h>
-#include <util/code.h>
-#include <util/regex.h>
+#include <base/types.h>
 
 #include <fstream>
 #include <iostream>
-#include <vector>
 #include <unordered_map>
 
 using namespace std;
 
+class TRegexParser;
+
 namespace NCodesearch {
 
 struct TQueryTreeNode;
+class TEncoder;
 
 class TSearcherConfig : public TConfigBase {
 public:

@@ -2,8 +2,8 @@
 
 #include "searcher.h"
 
-#include <index/writer.h>
-#include <indexer/lister.h>
+#include <core/index/writer.h>
+#include <util/lister.h>
 
 #include <algorithm>
 #include <atomic>
@@ -85,7 +85,6 @@ private:
                 continue;
 
             uint32_t version = atol(versionStr.c_str());
-            const std::string& pathStr = path.string();
             versions.insert(version);
         }
 
