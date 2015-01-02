@@ -13,8 +13,8 @@ class TRegexParser;
 
 namespace NCodesearch {
 
-struct TQueryTreeNode;
 class TEncoder;
+class TQueryTreeNode;
 
 class TSearcherConfig : public TConfigBase {
 public:

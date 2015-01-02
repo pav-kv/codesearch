@@ -3,6 +3,8 @@
 #include <base/types.h>
 
 #include <algorithm>
+#include <iostream>
+#include <string>
 
 namespace NCodesearch {
 
@@ -147,13 +149,13 @@ typedef TQueryTreeNode* TSearchQuery;
 
 class TQueryFactory {
 public:
-    static TQueryTreeNode* Parse(string query) {
+    static TQueryTreeNode* Parse(std::string query) {
         query.push_back('\0');
         size_t pos = 0;
         return Parse(query.c_str(), pos);
     }
 
-    static void Print(const TQueryTreeNode* node, ostream& output, int depth = 0) {
+    static void Print(const TQueryTreeNode* node, std::ostream& output, int depth = 0) {
         for (int i = 0; i < depth; ++i)
             output << ' ';
         switch (node->Type) {
@@ -169,6 +171,9 @@ public:
             break;
         case NODE_TERM:
             output << "TRI: " << dynamic_cast<const TQueryTermNode*>(node)->Trigram << '\n';
+            break;
+        case NODE_UNKNOWN:
+            output << "UNKNOWN\n";
             break;
         }
     }
