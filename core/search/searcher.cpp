@@ -4,6 +4,7 @@
 #include <util/bit.h>
 #include <util/code.h>
 #include <util/regex.h>
+#include <util/file.h>
 
 #include <sstream>
 #include <map>
@@ -35,19 +36,15 @@ void TSearcher::Search(const char* idxFile, const char* datFile, TSearchQuery qu
         cerr << "======\n";
     }
 
-    ifstream idxInput(idxFile);
-    ifstream datInput(datFile);
-    vector<char> idxBuffer(1 << 13);
-    vector<char> datBuffer(1 << 13);
-    idxInput.rdbuf()->pubsetbuf(&idxBuffer[0], idxBuffer.size());
-    datInput.rdbuf()->pubsetbuf(&datBuffer[0], datBuffer.size());
+    TBufferedFileInput idxInput(idxFile);
+    TBufferedFileInput datInput(datFile);
 
     TDocId filesCount;
     uint32_t compression;
     Read(idxInput, compression);
     Read(idxInput, filesCount);
     Decoder = CreateEncoder(static_cast<ECompression>(compression));
-    idxInput.seekg(filesCount * sizeof(TOffset), ios_base::cur);
+    idxInput.Get().seekg(filesCount * sizeof(TOffset), ios_base::cur);
 
     clock_t timeBegin = clock();
 
@@ -57,9 +54,9 @@ void TSearcher::Search(const char* idxFile, const char* datFile, TSearchQuery qu
     while (Read(idxInput, chunkNumber)) {
         if (Config.Verbose)
             cerr << "Searching in chunk " << chunkNumber << " ...\n";
-        Pos = idxInput.tellg();
+        Pos = idxInput.Get().tellg();
         BindChunkToQuery(idxInput, datInput, query);
-        idxInput.seekg(Pos + static_cast<istream::off_type>((TRI_COUNT + 1) * sizeof(TOffset)));
+        idxInput.Get().seekg(Pos + static_cast<istream::off_type>((TRI_COUNT + 1) * sizeof(TOffset)));
         TDocId nextDoc;
         while ((nextDoc = query->Next()) != DOCS_END) {
             result.push_back(nextDoc - lastDoc);
@@ -71,7 +68,7 @@ void TSearcher::Search(const char* idxFile, const char* datFile, TSearchQuery qu
             list.shrink_to_fit();
         }
     }
-    idxInput.clear();
+    idxInput.Get().clear();
 
     TRegexParser parser(pattern); // TODO: check compilation
 
@@ -80,16 +77,16 @@ void TSearcher::Search(const char* idxFile, const char* datFile, TSearchQuery qu
 
     if (!result.empty())
         ++result[0];
-    idxInput.seekg(sizeof(uint32_t) + sizeof(TDocId));
+    idxInput.Get().seekg(sizeof(uint32_t) + sizeof(TDocId));
     for (size_t i = 0; i < result.size(); ++i) {
-        idxInput.seekg((result[i] - 1) * sizeof(TOffset), ios_base::cur);
+        idxInput.Get().seekg((result[i] - 1) * sizeof(TOffset), ios_base::cur);
         TOffset offset;
         Read(idxInput, offset);
-        datInput.seekg(offset);
+        datInput.Get().seekg(offset);
         TOffset size;
         Read(datInput, size);
         vector<char> str(size);
-        datInput.read(&str[0], size);
+        datInput.Get().read(&str[0], size);
         string filename(str.begin(), str.end());
         if (Config.JustFilter)
             output << filename << '\n';
@@ -140,12 +137,12 @@ void TSearcher::BindChunkToQuery(ifstream& idxInput, ifstream& datInput, TQueryT
 void TSearcher::GrepFile(const char* filename, TRegexParser& parser, ostream& output) {
     if (Config.Verbose)
         cerr << "Searching in file " << filename << "\n";
-    ifstream input(filename);
-    vector<char> buffer(1 << 13); // TODO: const BUFFER_SIZSE = 1 << 13
-    input.rdbuf()->pubsetbuf(&buffer[0], buffer.size());
+
+    TBufferedFileInput input(filename);
+
     string line;
     size_t lineNumber = 0;
-    while (getline(input, line)) {
+    while (getline(input.Get(), line)) {
         ++lineNumber;
         if (!parser.Match(line.c_str()))
             continue;
@@ -158,7 +155,7 @@ void TSearcher::GrepFile(const char* filename, TRegexParser& parser, ostream& ou
         } else {
             output << filename << ':';
         }
-        if (Config.PrintLineNumbers)
+        if (Config.PrintLineNumbers) {
             if (Config.ColoredOutput) {
                 std::ostringstream oss;
                 oss << "\033[0;32m" << lineNumber;
@@ -168,6 +165,7 @@ void TSearcher::GrepFile(const char* filename, TRegexParser& parser, ostream& ou
             } else {
                 output << lineNumber << ':';
             }
+        }
         output << line << '\n';
     }
 }

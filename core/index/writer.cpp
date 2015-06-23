@@ -1,8 +1,8 @@
 #include "writer.h"
 
 #include <util/code.h>
+#include <util/file.h>
 
-#include <fstream>
 #include <memory.h>
 
 template <typename T>
@@ -37,12 +37,8 @@ void TIndexWriter::Index(const vector<string>& files, const char* idxFile, const
     DataOffset = 0;
     Chunk.Reset(TRI_COUNT);
 
-    ofstream idxOutput(idxFile);
-    ofstream datOutput(datFile);
-    vector<char> idxBuffer(1 << 13);
-    vector<char> datBuffer(1 << 13);
-    idxOutput.rdbuf()->pubsetbuf(&idxBuffer[0], idxBuffer.size());
-    datOutput.rdbuf()->pubsetbuf(&datBuffer[0], datBuffer.size());
+    TBufferedFileOutput idxOutput(idxFile);
+    TBufferedFileOutput datOutput(datFile);
 
     TDocId filesCount = files.size();
     Write(idxOutput, static_cast<uint32_t>(Config.CompressionMethod));
@@ -50,7 +46,7 @@ void TIndexWriter::Index(const vector<string>& files, const char* idxFile, const
     for (TDocId i = 0; i != filesCount; ++i) {
         Write(idxOutput, DataOffset);
         Write(datOutput, static_cast<TOffset>(files[i].size()));
-        datOutput << files[i];
+        datOutput.Get() << files[i];
         DataOffset += sizeof(TOffset) + files[i].size();
     }
 
@@ -63,9 +59,9 @@ void TIndexWriter::Index(const vector<string>& files, const char* idxFile, const
 void TIndexWriter::Index(TDocId docId, const char* filename, ostream& idxOutput, ostream& datOutput) {
     if (Config.Verbose)
         cerr << "Indexing " << docId << ": " << filename << '\n';
-    ifstream input(filename);
-    vector<char> buffer(1 << 13);
-    input.rdbuf()->pubsetbuf(&buffer[0], buffer.size());
+
+    TBufferedFileInput bufInput(filename);
+    istream& input = bufInput.Get();
 
     char chars[4];
     memset(chars, 0, sizeof(chars));

@@ -13,12 +13,7 @@ namespace NCodesearch {
 TSearcher::TSearcher(const char* idxFile, const char* datFile)
     : idxInput(idxFile)
     , datInput(datFile)
-    , idxBuffer(1 << 13)
-    , datBuffer(1 << 13)
 {
-    idxInput.rdbuf()->pubsetbuf(&idxBuffer[0], idxBuffer.size());
-    datInput.rdbuf()->pubsetbuf(&datBuffer[0], datBuffer.size());
-
     TDocId filesCount;
     uint32_t compression;
     Read(idxInput, compression);
@@ -30,12 +25,12 @@ TSearcher::TSearcher(const char* idxFile, const char* datFile)
         // TODO: Do not make random reads.
         TOffset pathOffset;
         Read(idxInput, pathOffset);
-        datInput.seekg(pathOffset);
+        datInput.Get().seekg(pathOffset);
 
         TOffset pathSize;
         Read(datInput, pathSize);
         vector<char> pathBuffer(pathSize);
-        datInput.read(&pathBuffer[0], pathSize);
+        datInput.Get().read(&pathBuffer[0], pathSize);
         Paths[docId].assign(pathBuffer.begin(), pathBuffer.end());
     }
 
@@ -53,9 +48,9 @@ void TSearcher::Search(TQueryTreeNode* query, const TSearchConfig& config, ostre
         cerr << "======\n";
     }
 
-    idxInput.clear();
-    datInput.clear();
-    idxInput.seekg(sizeof(TDocId) + sizeof(uint32_t) + Paths.size() * sizeof(TOffset), ios_base::beg);
+    idxInput.Get().clear();
+    datInput.Get().clear();
+    idxInput.Get().seekg(sizeof(TDocId) + sizeof(uint32_t) + Paths.size() * sizeof(TOffset), ios_base::beg);
 
     clock_t timeBegin = clock();
 
@@ -65,9 +60,9 @@ void TSearcher::Search(TQueryTreeNode* query, const TSearchConfig& config, ostre
     while (Read(idxInput, chunkNumber)) {
         if (config.Verbose)
             cerr << "Searching in chunk " << chunkNumber << " ...\n";
-        ifstream::pos_type pos = idxInput.tellg();
+        ifstream::pos_type pos = idxInput.Get().tellg();
         BindChunkToQuery(idxInput, datInput, query, pos);
-        idxInput.seekg(pos + static_cast<istream::off_type>((TRI_COUNT + 1) * sizeof(TOffset)));
+        idxInput.Get().seekg(pos + static_cast<istream::off_type>((TRI_COUNT + 1) * sizeof(TOffset)));
         TDocId nextDoc;
         while ((nextDoc = query->Next()) != DOCS_END) {
             result.push_back(nextDoc);
@@ -137,22 +132,21 @@ void TSearcher::BindChunkToQuery(ifstream& idxInput, ifstream& datInput, TQueryT
 void TSearcher::GrepFile(const char* filename, TRegexParser& parser, ostream& output, const TSearchConfig& config) {
     if (config.Verbose)
         cerr << "Searching in file " << filename << "\n";
-    ifstream input(filename);
-    input.seekg(0, ifstream::end);
-    ifstream::pos_type fileSize = input.tellg();
+
+    TBufferedFileInput input(filename);
+    input.Get().seekg(0, ifstream::end);
+    ifstream::pos_type fileSize = input.Get().tellg();
     if (fileSize > config.MaxFileSize) {
         if (config.Verbose)
             output << "Skipped by FileSize: " << filename << '\n';
         return;
     }
-    input.seekg(0, ifstream::beg);
+    input.Get().seekg(0, ifstream::beg);
 
-    vector<char> buffer(1 << 13); // TODO: const BUFFER_SIZSE = 1 << 13
-    input.rdbuf()->pubsetbuf(&buffer[0], buffer.size());
     string line;
     size_t lineNumber = 0;
     size_t sz = 0;
-    while (getline(input, line)) {
+    while (getline(input.Get(), line)) {
         sz += line.size();
         ++lineNumber;
         if (!parser.Match(line.c_str()))
@@ -166,7 +160,7 @@ void TSearcher::GrepFile(const char* filename, TRegexParser& parser, ostream& ou
         } else {
             output << filename << ':';
         }
-        if (config.PrintLineNumbers)
+        if (config.PrintLineNumbers) {
             if (config.ColoredOutput) {
                 std::ostringstream oss;
                 oss << "\033[0;32m" << lineNumber;
@@ -176,6 +170,7 @@ void TSearcher::GrepFile(const char* filename, TRegexParser& parser, ostream& ou
             } else {
                 output << lineNumber << ':';
             }
+        }
         output << line << '\n';
     }
     cerr << "Size: " << sz << "; " << filename << '\n';

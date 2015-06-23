@@ -2,6 +2,7 @@
 
 #include <base/types.h>
 #include <base/config.h>
+#include <util/file.h>
 #include <util/regex.h>
 
 #include <iostream>
@@ -47,11 +48,8 @@ private:
 
 private:
     // TODO: code style
-    // TODO: make buffered input type
-    ifstream idxInput;
-    ifstream datInput;
-    vector<char> idxBuffer;
-    vector<char> datBuffer;
+    TBufferedFileInput idxInput;
+    TBufferedFileInput datInput;
 
     std::vector<std::string> Paths;
     TEncoder* Decoder; // TODO: Smart pointer.
